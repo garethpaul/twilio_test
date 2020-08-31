@@ -9,6 +9,6 @@ jobs:
     steps:
     - uses: actions/first-interaction@v1
       with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token: ${{ secrets.TOKEN }}
         issue-message: 'Ahoy!'
         pr-message: 'Ahoy!'
