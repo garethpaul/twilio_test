@@ -37,7 +37,7 @@ Contribution rules:
 Twilio tests can affect live accounts, phone numbers, messages, and calls.
 Future work should keep credentials local and make side effects explicit.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Checked-in credentials or account identifiers
 - Live-call or live-message defaults
