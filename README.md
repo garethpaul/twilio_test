@@ -70,4 +70,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> twilio_test <!-- README-OVERVIEW-IMAGE --> Test
+> twilio_test Test
