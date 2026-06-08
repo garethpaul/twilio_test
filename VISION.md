@@ -43,3 +43,6 @@ Future work should keep credentials local and make side effects explicit.
 - Live-call or live-message defaults
 - Behavior claims without code
 - Hidden telemetry or logging of customer payloads
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
