@@ -1,5 +1,8 @@
 # twilio_test
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/twilio_test` is a public sample, documentation, or utility project. Test
@@ -68,4 +71,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > twilio_test <!-- README-OVERVIEW-IMAGE --> Test
-
