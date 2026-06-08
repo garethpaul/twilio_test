@@ -18,10 +18,10 @@ Priority:
 - Document intended test scope before adding code
 - Avoid committing Twilio credentials or account data
 - Keep repository workflow behavior visible in static checks
+- Keep live calls and messages opt-in until a real test harness exists
 
 Next priorities:
 
-- Add a README that defines the intended Twilio test scenario
 - Choose a language and deterministic test strategy
 - Add mock or sandbox examples before live-account examples
 - Archive the repository if it is no longer needed

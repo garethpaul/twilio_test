@@ -43,6 +43,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - No single runtime entry point was identified. Start by reading the source files and manifests listed above.
 - Run `make check` to check the placeholder documentation and GitHub workflow contract.
 
+## Intended Test Scenario
+
+This repository is reserved for a future Twilio integration smoke test. The
+first implementation should use mock or sandbox Twilio test doubles, keep live
+calls and messages opt-in, and document required environment variables before
+adding runtime code. In particular, live calls and messages must remain opt-in.
+
 ## Testing and Verification
 
 - `make check`

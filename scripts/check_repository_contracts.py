@@ -41,6 +41,9 @@ def check_placeholder_scope():
     readme = read_text("README.md")
     vision = read_text("VISION.md")
     require("No single runtime entry point was identified" in readme, "README must not claim missing runtime behavior")
+    require("## Intended Test Scenario" in readme, "README must define the intended Twilio test scenario")
+    require("mock or sandbox Twilio test doubles" in readme, "README must prefer mock or sandbox test paths")
+    require("live calls and messages must remain opt-in" in readme, "README must keep live Twilio side effects opt-in")
     require("does not yet define an implementation" in vision, "VISION must preserve sparse repository scope")
     require("Do not commit credentials" in vision, "VISION must preserve Twilio credential guardrails")
 
