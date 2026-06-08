@@ -34,6 +34,11 @@ Contribution rules:
 
 ## Security And Responsible Use
 
+Canonical security policy and reporting:
+
+- [`SECURITY.md`](SECURITY.md)
+
+
 Twilio tests can affect live accounts, phone numbers, messages, and calls.
 Future work should keep credentials local and make side effects explicit.
 
