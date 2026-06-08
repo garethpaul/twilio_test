@@ -41,11 +41,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Running or Using the Project
 
 - No single runtime entry point was identified. Start by reading the source files and manifests listed above.
-- Run `make verify` to check the placeholder documentation and GitHub workflow contract.
+- Run `make check` to check the placeholder documentation and GitHub workflow contract.
 
 ## Testing and Verification
 
-- `make verify`
+- `make check`
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

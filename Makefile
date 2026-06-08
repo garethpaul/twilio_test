@@ -1,4 +1,4 @@
-.PHONY: lint test build verify
+.PHONY: build check lint test verify
 
 PYTHON ?= python3
 
@@ -10,3 +10,5 @@ test: lint
 build: lint
 
 verify: lint test build
+
+check: verify
