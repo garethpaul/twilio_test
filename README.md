@@ -101,6 +101,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   phone-number, and body placeholder coverage.
 - See `docs/plans/2026-06-09-env-example-unique-placeholders.md` for exact-once
   environment placeholder coverage.
+- See `docs/plans/2026-06-09-har-artifact-ignore.md` for local HAR capture
+  ignore coverage.
 
 ## Contributing
 
