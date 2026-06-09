@@ -80,6 +80,7 @@ def check_secret_hygiene():
         "TWILIO_FROM=",
         "TWILIO_TO=",
         "TWILIO_BODY=",
+        "TWILIO_LOG_LEVEL=info",
         "TWILIO_SEND_LIVE=false",
     ]:
         require(name in env_example, f".env.example must document {name}")
@@ -90,6 +91,7 @@ def check_secret_hygiene():
         "# Twilio sender phone placeholder. Leave empty in git.",
         "# Twilio recipient phone placeholder. Leave empty in git.",
         "# Future message body placeholder. Leave empty until a mock harness exists.",
+        "# Default logging placeholder. Use debug only locally after redaction review.",
         "# Live Twilio side effects must remain disabled by default.",
     ]:
         require(comment in env_example, f".env.example must preserve guidance: {comment}")

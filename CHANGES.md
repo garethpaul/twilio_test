@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Added a placeholder `TWILIO_LOG_LEVEL=info` default with guidance to use
+  debug only locally after redaction review.
 - Added per-variable comments to `.env.example` so future local Twilio values
   stay clearly placeholder-only.
 - Extended static contracts to preserve the environment placeholder guidance.

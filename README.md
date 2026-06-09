@@ -67,8 +67,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   not casually stage credentials, account identifiers, or customer payloads.
 - `.env.example` documents expected Twilio variable names with empty values and
   keeps live sends disabled by default, including a placeholder body for future
-  message smoke tests. Each placeholder includes a short comment describing
-  what may be filled locally and what must stay empty in git.
+  message smoke tests and an `info` log-level default. Each placeholder
+  includes a short comment describing what may be filled locally and what must
+  stay empty in git.
 
 ## Security and Privacy Notes
 
@@ -91,6 +92,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   placeholder coverage.
 - See `docs/plans/2026-06-09-env-example-guidance.md` for per-variable
   `.env.example` guidance coverage.
+- See `docs/plans/2026-06-09-env-log-level-placeholder.md` for default
+  log-level placeholder coverage.
 
 ## Contributing
 
