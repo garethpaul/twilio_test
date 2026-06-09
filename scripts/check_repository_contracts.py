@@ -13,6 +13,7 @@ CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-twilio-test-baseline.md"
 EMPTY_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-empty-env-placeholders.md"
 UNIQUE_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-env-example-unique-placeholders.md"
 HAR_ARTIFACT_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-har-artifact-ignore.md"
+LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 
 
 def fail(message):
@@ -96,6 +97,10 @@ def check_secret_hygiene():
         "*.har",
         "__pycache__/",
         "*.pyc",
+        ".DS_Store",
+        ".idea/",
+        ".vscode/",
+        "*.iml",
     ]:
         require(pattern in gitignore, f".gitignore must include {pattern}")
 
@@ -178,6 +183,10 @@ def check_docs_plans():
     require(
         HAR_ARTIFACT_IGNORE_PLAN in plans,
         f"{HAR_ARTIFACT_IGNORE_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        LOCAL_METADATA_IGNORE_PLAN in plans,
+        f"{LOCAL_METADATA_IGNORE_PLAN.relative_to(ROOT)} must be present",
     )
 
     for plan in plans:

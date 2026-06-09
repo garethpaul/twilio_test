@@ -18,6 +18,7 @@ Priority:
 - Document intended test scope before adding code
 - Avoid committing Twilio credentials or account data
 - Ignore local environment files, debug logs, and HAR captures
+- Ignore local OS and IDE metadata
 - Keep environment examples placeholder-only and live sends disabled
 - Keep future message-body placeholders empty until an implementation exists
 - Keep credential, phone-number, and message-body placeholders empty in git
@@ -56,6 +57,7 @@ Future work should keep credentials local and make side effects explicit.
 - `.env.example` values that look like real credentials or phone numbers
 - Live-call or live-message defaults
 - Behavior claims without code
+- Local editor or OS metadata
 - Hidden telemetry or logging of customer payloads
 
 This list is a roadmap guardrail, not a permanent rule.

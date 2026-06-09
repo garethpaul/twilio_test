@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Ignored common local OS and IDE metadata and preserved those rules in static
+  repository contracts.
 - Required `.env.example` Twilio placeholders to appear exactly once with their
   safe checked-in values.
 - Extended static repository contracts to reject duplicate or undocumented

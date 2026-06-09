@@ -79,7 +79,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching authentication or token handling; examples from the scan include .github/workflows/greetings.yml.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include .github/workflows/greetings.yml.
 - Keep local Twilio credentials and debug output out of git; `.env` files and
-  `*.log` and `*.har` files are intentionally ignored.
+  `*.log` and `*.har` files are intentionally ignored. Common local OS and IDE
+  metadata files are ignored as well.
 
 ## Maintenance Notes
 
@@ -103,6 +104,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   environment placeholder coverage.
 - See `docs/plans/2026-06-09-har-artifact-ignore.md` for local HAR capture
   ignore coverage.
+- See `docs/plans/2026-06-09-local-metadata-ignore.md` for local OS and IDE
+  metadata ignore coverage.
 
 ## Contributing
 

@@ -6,3 +6,7 @@ twilio-debug*.log
 *.har
 __pycache__/
 *.pyc
+.DS_Store
+.idea/
+.vscode/
+*.iml
