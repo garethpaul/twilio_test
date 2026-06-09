@@ -64,20 +64,22 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - No required secret or credential file was identified in the repository scan.
   Local `.env` files and debug logs are ignored so future Twilio experiments do
-  not casually stage credentials, account identifiers, or customer payloads.
+  not casually stage credentials, account identifiers, customer payloads, or
+  HTTP archive captures.
 - `.env.example` documents expected Twilio variable names with empty values and
   keeps live sends disabled by default, including a placeholder body for future
   message smoke tests and an `info` log-level default. Each placeholder
   includes a short comment describing what may be filled locally and what must
   stay empty in git. Static checks require credential, phone-number, and body
-  placeholders to remain empty.
+  placeholders to remain empty and reject duplicate or undocumented Twilio
+  placeholder entries.
 
 ## Security and Privacy Notes
 
 - Review changes touching authentication or token handling; examples from the scan include .github/workflows/greetings.yml.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include .github/workflows/greetings.yml.
 - Keep local Twilio credentials and debug output out of git; `.env` files and
-  `*.log` files are intentionally ignored.
+  `*.log` and `*.har` files are intentionally ignored.
 
 ## Maintenance Notes
 
@@ -97,6 +99,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   log-level placeholder coverage.
 - See `docs/plans/2026-06-09-empty-env-placeholders.md` for empty credential,
   phone-number, and body placeholder coverage.
+- See `docs/plans/2026-06-09-env-example-unique-placeholders.md` for exact-once
+  environment placeholder coverage.
 
 ## Contributing
 

@@ -28,6 +28,8 @@ Helpful reports include:
 - Review found authentication, token, or session-related code paths; changes in those areas should receive security-focused review before merge.
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
+- Local `.env`, debug log, and HAR capture files should stay ignored because
+  they can contain credentials, account identifiers, request URLs, or payloads.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 
 ## Service and API Notes

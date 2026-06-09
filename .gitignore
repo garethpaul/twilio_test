@@ -3,5 +3,6 @@
 !.env.example
 *.log
 twilio-debug*.log
+*.har
 __pycache__/
 *.pyc

@@ -2,6 +2,12 @@
 
 ## 2026-06-09
 
+- Required `.env.example` Twilio placeholders to appear exactly once with their
+  safe checked-in values.
+- Extended static repository contracts to reject duplicate or undocumented
+  Twilio placeholder entries.
+- Ignored local HAR capture files and preserved the ignore rule in static
+  repository contracts.
 - Required credential, phone-number, and message-body entries in `.env.example`
   to remain empty.
 - Extended static repository contracts to preserve empty sensitive placeholders.

@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCS_PLANS = ROOT / "docs/plans"
 CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-twilio-test-baseline.md"
 EMPTY_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-empty-env-placeholders.md"
+UNIQUE_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-env-example-unique-placeholders.md"
+HAR_ARTIFACT_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-har-artifact-ignore.md"
 
 
 def fail(message):
@@ -25,6 +27,17 @@ def read_text(relative_path):
 def require(condition, message):
     if not condition:
         raise AssertionError(message)
+
+
+def env_entries(env_text):
+    entries = {}
+    for line in env_text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        name, value = stripped.split("=", 1)
+        entries.setdefault(name, []).append(value)
+    return entries
 
 
 def check_required_files():
@@ -64,12 +77,23 @@ def check_placeholder_scope():
 def check_secret_hygiene():
     gitignore = read_text(".gitignore")
     env_example = read_text(".env.example")
+    expected_env_entries = {
+        "TWILIO_ACCOUNT_SID": "",
+        "TWILIO_AUTH_TOKEN": "",
+        "TWILIO_FROM": "",
+        "TWILIO_TO": "",
+        "TWILIO_BODY": "",
+        "TWILIO_LOG_LEVEL": "info",
+        "TWILIO_SEND_LIVE": "false",
+    }
+    parsed_env = env_entries(env_example)
     for pattern in [
         ".env",
         ".env.*",
         "!.env.example",
         "*.log",
         "twilio-debug*.log",
+        "*.har",
         "__pycache__/",
         "*.pyc",
     ]:
@@ -85,6 +109,17 @@ def check_secret_hygiene():
         "TWILIO_SEND_LIVE=false",
     ]:
         require(name in env_example, f".env.example must document {name}")
+
+    for name, expected_value in expected_env_entries.items():
+        require(
+            parsed_env.get(name) == [expected_value],
+            f".env.example must define {name} exactly once with a safe placeholder value",
+        )
+    for name in parsed_env:
+        require(
+            not name.startswith("TWILIO_") or name in expected_env_entries,
+            f".env.example must not introduce undocumented Twilio placeholder {name}",
+        )
 
     for name in [
         "TWILIO_ACCOUNT_SID",
@@ -135,6 +170,14 @@ def check_docs_plans():
     require(
         EMPTY_ENV_PLACEHOLDERS_PLAN in plans,
         f"{EMPTY_ENV_PLACEHOLDERS_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        UNIQUE_ENV_PLACEHOLDERS_PLAN in plans,
+        f"{UNIQUE_ENV_PLACEHOLDERS_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        HAR_ARTIFACT_IGNORE_PLAN in plans,
+        f"{HAR_ARTIFACT_IGNORE_PLAN.relative_to(ROOT)} must be present",
     )
 
     for plan in plans:
