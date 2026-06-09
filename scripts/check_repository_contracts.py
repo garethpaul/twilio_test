@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_PLANS = ROOT / "docs/plans"
 CANONICAL_PLAN = DOCS_PLANS / "2026-06-08-twilio-test-baseline.md"
+EMPTY_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-empty-env-placeholders.md"
 
 
 def fail(message):
@@ -85,6 +86,18 @@ def check_secret_hygiene():
     ]:
         require(name in env_example, f".env.example must document {name}")
 
+    for name in [
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_FROM",
+        "TWILIO_TO",
+        "TWILIO_BODY",
+    ]:
+        require(
+            re.search(rf"^{name}=$", env_example, re.MULTILINE),
+            f".env.example must keep {name} empty",
+        )
+
     for comment in [
         "# Twilio account identifier placeholder. Leave empty in git.",
         "# Twilio auth token placeholder. Leave empty in git.",
@@ -119,6 +132,10 @@ def check_docs_plans():
     plans = sorted(DOCS_PLANS.glob("*.md"))
     require(plans, "docs/plans must contain completed maintenance plans")
     require(CANONICAL_PLAN in plans, f"{CANONICAL_PLAN.relative_to(ROOT)} must be present")
+    require(
+        EMPTY_ENV_PLACEHOLDERS_PLAN in plans,
+        f"{EMPTY_ENV_PLACEHOLDERS_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")

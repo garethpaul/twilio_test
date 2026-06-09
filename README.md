@@ -69,7 +69,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   keeps live sends disabled by default, including a placeholder body for future
   message smoke tests and an `info` log-level default. Each placeholder
   includes a short comment describing what may be filled locally and what must
-  stay empty in git.
+  stay empty in git. Static checks require credential, phone-number, and body
+  placeholders to remain empty.
 
 ## Security and Privacy Notes
 
@@ -94,6 +95,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   `.env.example` guidance coverage.
 - See `docs/plans/2026-06-09-env-log-level-placeholder.md` for default
   log-level placeholder coverage.
+- See `docs/plans/2026-06-09-empty-env-placeholders.md` for empty credential,
+  phone-number, and body placeholder coverage.
 
 ## Contributing
 

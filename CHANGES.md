@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Required credential, phone-number, and message-body entries in `.env.example`
+  to remain empty.
+- Extended static repository contracts to preserve empty sensitive placeholders.
 - Added a placeholder `TWILIO_LOG_LEVEL=info` default with guidance to use
   debug only locally after redaction review.
 - Added per-variable comments to `.env.example` so future local Twilio values

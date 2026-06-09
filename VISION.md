@@ -20,6 +20,7 @@ Priority:
 - Ignore local environment files and debug logs
 - Keep environment examples placeholder-only and live sends disabled
 - Keep future message-body placeholders empty until an implementation exists
+- Keep credential, phone-number, and message-body placeholders empty in git
 - Keep future debug logging opt-in from an info default
 - Keep environment placeholder comments clear about local-only values
 - Keep repository workflow behavior visible in static checks
