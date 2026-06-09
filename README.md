@@ -53,6 +53,8 @@ adding runtime code. In particular, live calls and messages must remain opt-in.
 ## Testing and Verification
 
 - `make check`
+- Completed maintenance plans live under `docs/plans` and are checked by
+  `make check`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

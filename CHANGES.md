@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added canonical `docs/plans` coverage to the placeholder contract checker.
 - Added an intended Twilio test scenario to the README without adding runtime
   behavior.
 - Extended placeholder static checks to require mock/sandbox-first and
