@@ -2,6 +2,9 @@
 
 ## 2026-06-08
 
+- Linked completed maintenance plans from the README and added static coverage
+  for plan discoverability.
+- Ignored Python bytecode caches produced by local checker syntax validation.
 - Added `.gitignore` coverage for local environment files and debug logs, with
   static checks preserving the secret-hygiene patterns.
 - Added canonical `docs/plans` coverage to the placeholder contract checker.

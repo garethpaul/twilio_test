@@ -20,6 +20,7 @@ Priority:
 - Ignore local environment files and debug logs
 - Keep repository workflow behavior visible in static checks
 - Keep live calls and messages opt-in until a real test harness exists
+- Keep completed maintenance plans discoverable from the README
 
 Next priorities:
 

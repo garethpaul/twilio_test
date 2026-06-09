@@ -49,6 +49,14 @@ def check_placeholder_scope():
     require("live calls and messages must remain opt-in" in readme, "README must keep live Twilio side effects opt-in")
     require("does not yet define an implementation" in vision, "VISION must preserve sparse repository scope")
     require("Do not commit credentials" in vision, "VISION must preserve Twilio credential guardrails")
+    require(
+        "docs/plans/2026-06-08-twilio-test-baseline.md" in readme,
+        "README must link the canonical placeholder plan",
+    )
+    require(
+        "docs/plans/2026-06-08-secret-hygiene.md" in readme,
+        "README must link the secret hygiene plan",
+    )
 
 
 def check_secret_hygiene():
@@ -59,6 +67,8 @@ def check_secret_hygiene():
         "!.env.example",
         "*.log",
         "twilio-debug*.log",
+        "__pycache__/",
+        "*.pyc",
     ]:
         require(pattern in gitignore, f".gitignore must include {pattern}")
 
