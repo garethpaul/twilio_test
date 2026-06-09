@@ -60,12 +60,16 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Configuration and Secrets
 
-- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- No required secret or credential file was identified in the repository scan.
+  Local `.env` files and debug logs are ignored so future Twilio experiments do
+  not casually stage credentials, account identifiers, or customer payloads.
 
 ## Security and Privacy Notes
 
 - Review changes touching authentication or token handling; examples from the scan include .github/workflows/greetings.yml.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include .github/workflows/greetings.yml.
+- Keep local Twilio credentials and debug output out of git; `.env` files and
+  `*.log` files are intentionally ignored.
 
 ## Maintenance Notes
 

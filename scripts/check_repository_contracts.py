@@ -28,6 +28,7 @@ def require(condition, message):
 
 def check_required_files():
     for relative_path in [
+        ".gitignore",
         "README.md",
         "SECURITY.md",
         "VISION.md",
@@ -48,6 +49,18 @@ def check_placeholder_scope():
     require("live calls and messages must remain opt-in" in readme, "README must keep live Twilio side effects opt-in")
     require("does not yet define an implementation" in vision, "VISION must preserve sparse repository scope")
     require("Do not commit credentials" in vision, "VISION must preserve Twilio credential guardrails")
+
+
+def check_secret_hygiene():
+    gitignore = read_text(".gitignore")
+    for pattern in [
+        ".env",
+        ".env.*",
+        "!.env.example",
+        "*.log",
+        "twilio-debug*.log",
+    ]:
+        require(pattern in gitignore, f".gitignore must include {pattern}")
 
 
 def check_greetings_workflow():
@@ -74,6 +87,7 @@ def main():
     checks = [
         check_required_files,
         check_placeholder_scope,
+        check_secret_hygiene,
         check_greetings_workflow,
         check_docs_plans,
     ]

@@ -17,6 +17,7 @@ Priority:
 - Keep security-reporting metadata available
 - Document intended test scope before adding code
 - Avoid committing Twilio credentials or account data
+- Ignore local environment files and debug logs
 - Keep repository workflow behavior visible in static checks
 - Keep live calls and messages opt-in until a real test harness exists
 

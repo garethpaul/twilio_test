@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Added `.gitignore` coverage for local environment files and debug logs, with
+  static checks preserving the secret-hygiene patterns.
 - Added canonical `docs/plans` coverage to the placeholder contract checker.
 - Added an intended Twilio test scenario to the README without adding runtime
   behavior.
