@@ -66,7 +66,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Local `.env` files and debug logs are ignored so future Twilio experiments do
   not casually stage credentials, account identifiers, or customer payloads.
 - `.env.example` documents expected Twilio variable names with empty values and
-  keeps live sends disabled by default.
+  keeps live sends disabled by default, including a placeholder body for future
+  message smoke tests.
 
 ## Security and Privacy Notes
 
@@ -85,6 +86,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   log ignore coverage.
 - See `docs/plans/2026-06-09-env-example-placeholders.md` for safe environment
   template coverage.
+- See `docs/plans/2026-06-09-env-body-placeholder.md` for message body
+  placeholder coverage.
 
 ## Contributing
 

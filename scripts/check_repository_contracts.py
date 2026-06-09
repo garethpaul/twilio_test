@@ -79,6 +79,7 @@ def check_secret_hygiene():
         "TWILIO_AUTH_TOKEN=",
         "TWILIO_FROM=",
         "TWILIO_TO=",
+        "TWILIO_BODY=",
         "TWILIO_SEND_LIVE=false",
     ]:
         require(name in env_example, f".env.example must document {name}")

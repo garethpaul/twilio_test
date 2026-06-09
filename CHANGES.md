@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Added a placeholder `TWILIO_BODY` entry to `.env.example` for future message
+  smoke tests.
+- Extended static contracts to preserve message body placeholder coverage.
 - Added a placeholder-only `.env.example` with live sends disabled by default.
 - Extended static contracts to preserve safe Twilio environment placeholders.
 
