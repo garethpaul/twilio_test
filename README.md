@@ -42,6 +42,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - No single runtime entry point was identified. Start by reading the source files and manifests listed above.
 - Run `make check` to check the placeholder documentation and GitHub workflow contract.
+- Copy `.env.example` to `.env` only for local experiments. Keep the placeholder
+  values empty until a real mock or sandbox test harness exists.
 
 ## Intended Test Scenario
 
@@ -63,6 +65,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - No required secret or credential file was identified in the repository scan.
   Local `.env` files and debug logs are ignored so future Twilio experiments do
   not casually stage credentials, account identifiers, or customer payloads.
+- `.env.example` documents expected Twilio variable names with empty values and
+  keeps live sends disabled by default.
 
 ## Security and Privacy Notes
 
@@ -79,6 +83,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   placeholder contract baseline.
 - See `docs/plans/2026-06-08-secret-hygiene.md` for local credential and debug
   log ignore coverage.
+- See `docs/plans/2026-06-09-env-example-placeholders.md` for safe environment
+  template coverage.
 
 ## Contributing
 

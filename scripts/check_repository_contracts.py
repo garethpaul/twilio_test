@@ -29,6 +29,7 @@ def require(condition, message):
 def check_required_files():
     for relative_path in [
         ".gitignore",
+        ".env.example",
         "README.md",
         "SECURITY.md",
         "VISION.md",
@@ -61,6 +62,7 @@ def check_placeholder_scope():
 
 def check_secret_hygiene():
     gitignore = read_text(".gitignore")
+    env_example = read_text(".env.example")
     for pattern in [
         ".env",
         ".env.*",
@@ -71,6 +73,24 @@ def check_secret_hygiene():
         "*.pyc",
     ]:
         require(pattern in gitignore, f".gitignore must include {pattern}")
+
+    for name in [
+        "TWILIO_ACCOUNT_SID=",
+        "TWILIO_AUTH_TOKEN=",
+        "TWILIO_FROM=",
+        "TWILIO_TO=",
+        "TWILIO_SEND_LIVE=false",
+    ]:
+        require(name in env_example, f".env.example must document {name}")
+
+    require(
+        not re.search(r"TWILIO_ACCOUNT_SID=AC[0-9A-Za-z]+", env_example),
+        ".env.example must not contain a real-looking account SID",
+    )
+    require(
+        not re.search(r"TWILIO_(FROM|TO)=\+1[0-9]+", env_example),
+        ".env.example must not contain a real-looking phone number",
+    )
 
 
 def check_greetings_workflow():

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added a placeholder-only `.env.example` with live sends disabled by default.
+- Extended static contracts to preserve safe Twilio environment placeholders.
+
 ## 2026-06-08
 
 - Linked completed maintenance plans from the README and added static coverage

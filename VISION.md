@@ -18,6 +18,7 @@ Priority:
 - Document intended test scope before adding code
 - Avoid committing Twilio credentials or account data
 - Ignore local environment files and debug logs
+- Keep environment examples placeholder-only and live sends disabled
 - Keep repository workflow behavior visible in static checks
 - Keep live calls and messages opt-in until a real test harness exists
 - Keep completed maintenance plans discoverable from the README
@@ -47,6 +48,7 @@ Future work should keep credentials local and make side effects explicit.
 ## What We Will Not Merge (For Now)
 
 - Checked-in credentials or account identifiers
+- `.env.example` values that look like real credentials or phone numbers
 - Live-call or live-message defaults
 - Behavior claims without code
 - Hidden telemetry or logging of customer payloads
