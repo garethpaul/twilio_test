@@ -20,6 +20,7 @@ Priority:
 - Ignore local environment files and debug logs
 - Keep environment examples placeholder-only and live sends disabled
 - Keep future message-body placeholders empty until an implementation exists
+- Keep environment placeholder comments clear about local-only values
 - Keep repository workflow behavior visible in static checks
 - Keep live calls and messages opt-in until a real test harness exists
 - Keep completed maintenance plans discoverable from the README

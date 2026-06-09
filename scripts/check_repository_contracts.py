@@ -84,6 +84,16 @@ def check_secret_hygiene():
     ]:
         require(name in env_example, f".env.example must document {name}")
 
+    for comment in [
+        "# Twilio account identifier placeholder. Leave empty in git.",
+        "# Twilio auth token placeholder. Leave empty in git.",
+        "# Twilio sender phone placeholder. Leave empty in git.",
+        "# Twilio recipient phone placeholder. Leave empty in git.",
+        "# Future message body placeholder. Leave empty until a mock harness exists.",
+        "# Live Twilio side effects must remain disabled by default.",
+    ]:
+        require(comment in env_example, f".env.example must preserve guidance: {comment}")
+
     require(
         not re.search(r"TWILIO_ACCOUNT_SID=AC[0-9A-Za-z]+", env_example),
         ".env.example must not contain a real-looking account SID",

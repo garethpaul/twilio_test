@@ -2,6 +2,9 @@
 
 ## 2026-06-09
 
+- Added per-variable comments to `.env.example` so future local Twilio values
+  stay clearly placeholder-only.
+- Extended static contracts to preserve the environment placeholder guidance.
 - Added a placeholder `TWILIO_BODY` entry to `.env.example` for future message
   smoke tests.
 - Extended static contracts to preserve message body placeholder coverage.
