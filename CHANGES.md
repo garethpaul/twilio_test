@@ -1,5 +1,19 @@
 # Changes
 
+## 2026-06-10
+
+- Replaced the legacy mutable first-interaction v1 workflow with the verified
+  v3.1.0 commit, current inputs, repository token, explicit permissions, and a
+  bounded runtime.
+- Added immutable-pinned Python 3.10/3.12/3.14 GitHub Actions verification for the
+  placeholder, secret-hygiene, and documentation contracts.
+- Used `pull_request_target` for static greeting comments so forked pull
+  requests work without checking out or executing contributor code.
+- Split issue and pull-request greetings into event-scoped jobs with distinct
+  write permissions.
+- Extended local contracts to fail on workflow permission, trigger, pin,
+  timeout, matrix, or command drift.
+
 ## 2026-06-09
 
 - Ignored common local OS and IDE metadata and preserved those rules in static

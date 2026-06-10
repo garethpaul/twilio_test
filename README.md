@@ -55,6 +55,11 @@ adding runtime code. In particular, live calls and messages must remain opt-in.
 ## Testing and Verification
 
 - `make check`
+- GitHub Actions runs the same contracts on Python 3.10, 3.12, and 3.14 with
+  read-only repository contents permissions and immutable action pins.
+- The greeting workflow uses `pull_request_target` without checkout or command
+  execution so first-time contributors from forks can receive the static
+  greeting with separate event-scoped comment permissions.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -106,6 +111,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ignore coverage.
 - See `docs/plans/2026-06-09-local-metadata-ignore.md` for local OS and IDE
   metadata ignore coverage.
+- See `docs/plans/2026-06-10-workflow-hardening-and-ci.md` for immutable
+  greetings automation and hosted contract verification.
 
 ## Contributing
 
