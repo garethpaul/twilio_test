@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import re
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
@@ -15,6 +16,7 @@ UNIQUE_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-env-example-unique-place
 HAR_ARTIFACT_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-har-artifact-ignore.md"
 LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
+TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
 
 
 def fail(message):
@@ -79,6 +81,11 @@ def check_placeholder_scope():
 
 def check_secret_hygiene():
     gitignore = read_text(".gitignore")
+    ignore_entries = {
+        line.strip()
+        for line in gitignore.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
     env_example = read_text(".env.example")
     expected_env_entries = {
         "TWILIO_ACCOUNT_SID": "",
@@ -97,6 +104,12 @@ def check_secret_hygiene():
         "*.log",
         "twilio-debug*.log",
         "*.har",
+        "*.pcap",
+        "*.pcapng",
+        "*.trace",
+        ".dev.vars",
+        "*.pem",
+        "*.key",
         "__pycache__/",
         "*.pyc",
         ".DS_Store",
@@ -104,7 +117,7 @@ def check_secret_hygiene():
         ".vscode/",
         "*.iml",
     ]:
-        require(pattern in gitignore, f".gitignore must include {pattern}")
+        require(pattern in ignore_entries, f".gitignore must include exact rule {pattern}")
 
     for name in [
         "TWILIO_ACCOUNT_SID=",
@@ -161,6 +174,37 @@ def check_secret_hygiene():
     )
 
 
+def check_tracked_secret_patterns():
+    tracked = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z"],
+        check=True,
+        capture_output=True,
+    ).stdout.split(b"\0")
+    patterns = [
+        (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
+        (re.compile(r"(?m)^[ \t]*TWILIO_AUTH_TOKEN[ \t]*=[ \t]*\S+"), "Twilio auth token assignment"),
+        (re.compile(r"(?m)^[ \t]*TWILIO_(FROM|TO)[ \t]*=[ \t]*\+?[0-9][0-9 -]{5,}"), "Twilio phone assignment"),
+        (re.compile(r"-{5}BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-{5}"), "private key"),
+    ]
+
+    for relative_bytes in tracked:
+        if not relative_bytes:
+            continue
+        relative_path = relative_bytes.decode("utf-8")
+        data = (ROOT / relative_path).read_bytes()
+        if b"\0" in data:
+            continue
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        for pattern, description in patterns:
+            require(
+                pattern.search(text) is None,
+                f"{relative_path} contains a real-looking {description}",
+            )
+
+
 def check_greetings_workflow():
     workflow = read_text(".github/workflows/greetings.yml")
     require("issues:\n    types:\n      - opened" in workflow, "greetings workflow must greet newly opened issues")
@@ -169,7 +213,10 @@ def check_greetings_workflow():
     require("issues: write" in workflow, "greetings workflow must allow issue comments")
     require("pull-requests: write" in workflow, "greetings workflow must allow pull-request comments")
     require("timeout-minutes: 2" in workflow, "greetings workflow must have a bounded runtime")
-    require("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d" in workflow, "greetings workflow must pin first-interaction")
+    require("runs-on: ubuntu-24.04" in workflow, "greetings workflow must use Ubuntu 24.04")
+    require("ubuntu-latest" not in workflow, "greetings workflow must not use a floating runner")
+    require(workflow.count("runs-on: ubuntu-24.04") == 2, "both greeting jobs must use Ubuntu 24.04")
+    require(workflow.count("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0") == 2, "both greeting jobs must use the annotated first-interaction pin")
     require("repo_token: ${{ github.token }}" in workflow, "greetings workflow must use the repository token")
     require("TWILIO_" not in workflow, "placeholder workflow must not reference Twilio credentials")
     require("issue_message:" in workflow, "greetings workflow must keep issue greeting explicit")
@@ -191,14 +238,27 @@ def check_hosted_verification():
         "workflow_dispatch:",
         "branches:\n      - master",
         "permissions:\n  contents: read",
+        "group: check-${{ github.workflow }}-${{ github.ref }}",
+        "cancel-in-progress: true",
+        "runs-on: ubuntu-24.04",
         "timeout-minutes: 5",
         'python-version: ["3.10", "3.12", "3.14"]',
-        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
-        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
+        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0",
         "run: make check",
     ]:
         require(contract in workflow, f"hosted verification must include {contract!r}")
+    require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
+    makefile = read_text("Makefile")
+    require(
+        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile,
+        "Makefile must resolve the repository root from its own location",
+    )
+    require(
+        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
+        "Makefile must run the checker independently of the caller's directory",
+    )
 
 
 def check_docs_plans():
@@ -226,6 +286,10 @@ def check_docs_plans():
         WORKFLOW_HARDENING_PLAN in plans,
         f"{WORKFLOW_HARDENING_PLAN.relative_to(ROOT)} must be present",
     )
+    require(
+        TRACKED_SECRET_SCAN_PLAN in plans,
+        f"{TRACKED_SECRET_SCAN_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")
@@ -238,6 +302,7 @@ def main():
         check_required_files,
         check_placeholder_scope,
         check_secret_hygiene,
+        check_tracked_secret_patterns,
         check_greetings_workflow,
         check_hosted_verification,
         check_docs_plans,

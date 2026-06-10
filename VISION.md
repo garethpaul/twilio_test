@@ -18,6 +18,8 @@ Priority:
 - Document intended test scope before adding code
 - Avoid committing Twilio credentials or account data
 - Ignore local environment files, debug logs, and HAR captures
+- Ignore packet captures, traces, local Worker secrets, and key material
+- Scan all tracked text for real-looking Twilio identifiers and secrets
 - Ignore local OS and IDE metadata
 - Keep environment examples placeholder-only and live sends disabled
 - Keep future message-body placeholders empty until an implementation exists

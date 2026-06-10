@@ -4,6 +4,12 @@
 *.log
 twilio-debug*.log
 *.har
+*.pcap
+*.pcapng
+*.trace
+.dev.vars
+*.pem
+*.key
 __pycache__/
 *.pyc
 .DS_Store

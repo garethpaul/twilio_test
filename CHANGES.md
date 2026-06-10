@@ -2,6 +2,13 @@
 
 ## 2026-06-10
 
+- Added a tracked UTF-8 text scan for Twilio Account/API/Message/Call SIDs,
+  populated auth-token and phone assignments, and private-key blocks.
+- Expanded local artifact ignores to packet captures, traces, `.dev.vars`, PEM,
+  and key files.
+- Fixed verification and greeting workflows to Ubuntu 24.04, annotated all
+  immutable action revisions, scoped verification concurrency, and made the
+  Makefile root-independent.
 - Replaced the legacy mutable first-interaction v1 workflow with the verified
   v3.1.0 commit, current inputs, repository token, explicit permissions, and a
   bounded runtime.

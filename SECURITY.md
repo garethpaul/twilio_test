@@ -30,6 +30,10 @@ Helpful reports include:
 - Review found secret-like configuration names that require careful review before use; changes in those areas should receive security-focused review before merge.
 - Local `.env`, debug log, and HAR capture files should stay ignored because
   they can contain credentials, account identifiers, request URLs, or payloads.
+- Packet captures, trace files, `.dev.vars`, PEM files, and private key files
+  should remain ignored. The repository gate scans all tracked UTF-8 text for
+  real-looking Twilio SIDs, populated token/phone assignments, and private-key
+  blocks.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 
 ## Service and API Notes

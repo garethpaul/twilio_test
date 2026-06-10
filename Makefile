@@ -1,9 +1,10 @@
 .PHONY: build check lint test verify
 
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PYTHON ?= python3
 
 lint:
-	$(PYTHON) scripts/check_repository_contracts.py
+	$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"
 
 test: lint
 
