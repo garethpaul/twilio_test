@@ -17,6 +17,24 @@ HAR_ARTIFACT_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-har-artifact-ignore.md"
 LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
 TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
+SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
+
+TRACKED_SECRET_PATTERNS = [
+    (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
+    (
+        re.compile(
+            r'''(?im)^[ \t]*(?:export[ \t]+)?["']?TWILIO_AUTH_TOKEN["']?[ \t]*(?:=|:)[ \t]*["']?[0-9a-f]{32}(?![0-9a-f])'''
+        ),
+        "Twilio auth token assignment",
+    ),
+    (
+        re.compile(
+            r'''(?im)^[ \t]*(?:export[ \t]+)?["']?TWILIO_(FROM|TO)["']?[ \t]*(?:=|:)[ \t]*["']?\+?[0-9][0-9 ()-]{5,}'''
+        ),
+        "Twilio phone assignment",
+    ),
+    (re.compile(r"-{5}BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-{5}"), "private key"),
+]
 
 
 def fail(message):
@@ -180,13 +198,6 @@ def check_tracked_secret_patterns():
         check=True,
         capture_output=True,
     ).stdout.split(b"\0")
-    patterns = [
-        (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
-        (re.compile(r"(?m)^[ \t]*TWILIO_AUTH_TOKEN[ \t]*=[ \t]*\S+"), "Twilio auth token assignment"),
-        (re.compile(r"(?m)^[ \t]*TWILIO_(FROM|TO)[ \t]*=[ \t]*\+?[0-9][0-9 -]{5,}"), "Twilio phone assignment"),
-        (re.compile(r"-{5}BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-{5}"), "private key"),
-    ]
-
     for relative_bytes in tracked:
         if not relative_bytes:
             continue
@@ -198,11 +209,31 @@ def check_tracked_secret_patterns():
             text = data.decode("utf-8")
         except UnicodeDecodeError:
             continue
-        for pattern, description in patterns:
+        for pattern, description in TRACKED_SECRET_PATTERNS:
             require(
                 pattern.search(text) is None,
                 f"{relative_path} contains a real-looking {description}",
             )
+
+
+def check_secret_pattern_syntaxes():
+    token = "0123456789abcdef" * 2
+    first_phone = "+1555" + "1234567"
+    second_phone = "+1555" + "7654321"
+    third_phone = "+1555" + "9876543"
+    secret_fixtures = [
+        "TWILIO_AUTH_TOKEN: " + token,
+        '"TWILIO_AUTH_TOKEN": "' + token + '"',
+        "export TWILIO_AUTH_TOKEN=" + token,
+        "TWILIO_FROM: '" + second_phone + "'",
+        '"TWILIO_TO": "' + third_phone + '"',
+        "export TWILIO_TO=" + first_phone,
+    ]
+    for fixture in secret_fixtures:
+        require(
+            any(pattern.search(fixture) for pattern, _ in TRACKED_SECRET_PATTERNS),
+            f"tracked-secret patterns must reject assignment syntax: {fixture}",
+        )
 
 
 def check_greetings_workflow():
@@ -290,6 +321,10 @@ def check_docs_plans():
         TRACKED_SECRET_SCAN_PLAN in plans,
         f"{TRACKED_SECRET_SCAN_PLAN.relative_to(ROOT)} must be present",
     )
+    require(
+        SECRET_SYNTAX_PLAN in plans,
+        f"{SECRET_SYNTAX_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")
@@ -303,6 +338,7 @@ def main():
         check_placeholder_scope,
         check_secret_hygiene,
         check_tracked_secret_patterns,
+        check_secret_pattern_syntaxes,
         check_greetings_workflow,
         check_hosted_verification,
         check_docs_plans,

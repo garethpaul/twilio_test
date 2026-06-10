@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Extended tracked Twilio secret detection across shell exports, dotenv, YAML,
+  and JSON assignment syntax with embedded regression fixtures.
 - Added a tracked UTF-8 text scan for Twilio Account/API/Message/Call SIDs,
   populated auth-token and phone assignments, and private-key blocks.
 - Expanded local artifact ignores to packet captures, traces, `.dev.vars`, PEM,
