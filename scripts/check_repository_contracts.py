@@ -14,6 +14,7 @@ EMPTY_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-empty-env-placeholders.md
 UNIQUE_ENV_PLACEHOLDERS_PLAN = DOCS_PLANS / "2026-06-09-env-example-unique-placeholders.md"
 HAR_ARTIFACT_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-har-artifact-ignore.md"
 LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
+WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
 
 
 def fail(message):
@@ -49,6 +50,7 @@ def check_required_files():
         "SECURITY.md",
         "VISION.md",
         "docs/readme-overview.svg",
+        ".github/workflows/check.yml",
         ".github/workflows/greetings.yml",
     ]:
         require((ROOT / relative_path).exists(), f"{relative_path} must stay checked in")
@@ -161,10 +163,34 @@ def check_secret_hygiene():
 
 def check_greetings_workflow():
     workflow = read_text(".github/workflows/greetings.yml")
-    require("actions/first-interaction@v1" in workflow, "greetings workflow must keep first-interaction action explicit")
-    require("repo-token:" in workflow, "greetings workflow must keep token wiring explicit")
+    require("issues:\n    types:\n      - opened" in workflow, "greetings workflow must greet newly opened issues")
+    require("pull_request:\n    types:\n      - opened" in workflow, "greetings workflow must greet newly opened pull requests")
+    require("contents: read" in workflow, "greetings workflow must keep contents read-only")
+    require("issues: write" in workflow, "greetings workflow must allow issue comments")
+    require("pull-requests: write" in workflow, "greetings workflow must allow pull-request comments")
+    require("timeout-minutes: 2" in workflow, "greetings workflow must have a bounded runtime")
+    require("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d" in workflow, "greetings workflow must pin first-interaction")
+    require("repo_token: ${{ github.token }}" in workflow, "greetings workflow must use the repository token")
     require("TWILIO_" not in workflow, "placeholder workflow must not reference Twilio credentials")
-    require("issue-message:" in workflow, "greetings workflow must keep issue greeting explicit")
+    require("issue_message:" in workflow, "greetings workflow must keep issue greeting explicit")
+    require("pr_message:" in workflow, "greetings workflow must keep pull-request greeting explicit")
+    require("@v" not in workflow, "greetings workflow action must use an immutable commit")
+
+
+def check_hosted_verification():
+    workflow = read_text(".github/workflows/check.yml")
+    for contract in [
+        "pull_request:",
+        "branches:\n      - master",
+        "permissions:\n  contents: read",
+        "timeout-minutes: 5",
+        'python-version: ["3.10", "3.12"]',
+        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10",
+        "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405",
+        "run: make check",
+    ]:
+        require(contract in workflow, f"hosted verification must include {contract!r}")
+    require("@v" not in workflow, "hosted verification actions must use immutable commits")
 
 
 def check_docs_plans():
@@ -188,6 +214,10 @@ def check_docs_plans():
         LOCAL_METADATA_IGNORE_PLAN in plans,
         f"{LOCAL_METADATA_IGNORE_PLAN.relative_to(ROOT)} must be present",
     )
+    require(
+        WORKFLOW_HARDENING_PLAN in plans,
+        f"{WORKFLOW_HARDENING_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")
@@ -201,6 +231,7 @@ def main():
         check_placeholder_scope,
         check_secret_hygiene,
         check_greetings_workflow,
+        check_hosted_verification,
         check_docs_plans,
     ]
     try:
