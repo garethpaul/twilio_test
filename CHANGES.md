@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Disabled checkout credential persistence in the canonical verification job
+  and added a fail-closed local workflow contract for the setting.
+
 ## 2026-06-10
 
 - Extended tracked Twilio secret detection across shell exports, dotenv, YAML,
