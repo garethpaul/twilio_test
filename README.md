@@ -55,8 +55,12 @@ adding runtime code. In particular, live calls and messages must remain opt-in.
 ## Testing and Verification
 
 - `make check`
-- GitHub Actions runs the same contracts on Python 3.10 and 3.12 with
-  read-only repository contents permissions and immutable action pins.
+- GitHub Actions runs the same contracts on Python 3.10, 3.12, and 3.14 with
+  read-only repository contents permissions, Ubuntu 24.04, and immutable action
+  pins.
+- The greeting workflow uses `pull_request_target` without checkout or command
+  execution so first-time contributors from forks can receive the static
+  greeting with separate event-scoped comment permissions.
 - Completed maintenance plans live under `docs/plans` and are checked by
   `make check`.
 
@@ -68,6 +72,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Local `.env` files and debug logs are ignored so future Twilio experiments do
   not casually stage credentials, account identifiers, customer payloads, or
   HTTP archive captures.
+- Packet captures, trace files, Wrangler local secrets, PEM files, and key files
+  are also ignored. The checker scans every tracked UTF-8 text file for
+  real-looking Twilio SIDs, token/phone assignments, and private keys. Token
+  and phone checks cover shell exports plus dotenv, YAML, and JSON assignments.
 - `.env.example` documents expected Twilio variable names with empty values and
   keeps live sends disabled by default, including a placeholder body for future
   message smoke tests and an `info` log-level default. Each placeholder
@@ -81,8 +89,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching authentication or token handling; examples from the scan include .github/workflows/greetings.yml.
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include .github/workflows/greetings.yml.
 - Keep local Twilio credentials and debug output out of git; `.env` files and
-  `*.log` and `*.har` files are intentionally ignored. Common local OS and IDE
-  metadata files are ignored as well.
+  `*.log`, `*.har`, packet capture, trace, and key files are intentionally
+  ignored. Common local OS and IDE metadata files are ignored as well.
 
 ## Maintenance Notes
 
@@ -110,6 +118,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
   metadata ignore coverage.
 - See `docs/plans/2026-06-10-workflow-hardening-and-ci.md` for immutable
   greetings automation and hosted contract verification.
+- See `docs/plans/2026-06-10-tracked-secret-scan.md` for tracked-text secret
+  pattern and local capture-artifact coverage.
+- See `docs/plans/2026-06-10-secret-assignment-syntaxes.md` for shell, dotenv,
+  YAML, and JSON credential-assignment coverage.
 
 ## Contributing
 

@@ -2,11 +2,24 @@
 
 ## 2026-06-10
 
+- Extended tracked Twilio secret detection across shell exports, dotenv, YAML,
+  and JSON assignment syntax with embedded regression fixtures.
+- Added a tracked UTF-8 text scan for Twilio Account/API/Message/Call SIDs,
+  populated auth-token and phone assignments, and private-key blocks.
+- Expanded local artifact ignores to packet captures, traces, `.dev.vars`, PEM,
+  and key files.
+- Fixed verification and greeting workflows to Ubuntu 24.04, annotated all
+  immutable action revisions, scoped verification concurrency, and made the
+  Makefile root-independent.
 - Replaced the legacy mutable first-interaction v1 workflow with the verified
   v3.1.0 commit, current inputs, repository token, explicit permissions, and a
   bounded runtime.
-- Added immutable-pinned Python 3.10/3.12 GitHub Actions verification for the
+- Added immutable-pinned Python 3.10/3.12/3.14 GitHub Actions verification for the
   placeholder, secret-hygiene, and documentation contracts.
+- Used `pull_request_target` for static greeting comments so forked pull
+  requests work without checking out or executing contributor code.
+- Split issue and pull-request greetings into event-scoped jobs with distinct
+  write permissions.
 - Extended local contracts to fail on workflow permission, trigger, pin,
   timeout, matrix, or command drift.
 
