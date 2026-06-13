@@ -52,5 +52,7 @@ event-scoped jobs supplied only the message used by their own event.
 
 - The first-interaction action can still fail for provider-side permission or
   availability errors.
-- Hosted confirmation requires a new exact-head push and pull-request-target
-  run after this fix is committed and pushed.
+- `pull_request_target` loads its workflow from the PR base branch and this
+  workflow triggers only on `opened`, so the current branch cannot receive a
+  hosted Greetings rerun before merge. Hosted confirmation requires a newly
+  opened PR after this fix reaches the base branch.
