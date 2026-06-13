@@ -38,6 +38,9 @@ event-scoped jobs supplied only the message used by their own event.
 - Hosted failure: pull-request-target run `27450669768`, job `81145057443`,
   failed with `Input required and not supplied: issue_message` at exact head
   `08cd7602d28e59b1666508440658a4ecf27abbea`.
+- Pull-request-target run `27461296058`, job `81175507220`, reproduced the
+  same default-branch failure for PR #5 head
+  `cea1d8fd29e6ed2a728078c376daf83526d3dd68`.
 - Upstream source audit: pinned commit
   `1c4688942c71f71d4f5502a26ea67c331730fa4d` calls `getInput` with
   `required: true` for both message inputs.
@@ -56,3 +59,4 @@ event-scoped jobs supplied only the message used by their own event.
   workflow triggers only on `opened`, so the current branch cannot receive a
   hosted Greetings rerun before merge. Hosted confirmation requires a newly
   opened PR after this fix reaches the base branch.
+- No merge or close action is authorized by this plan.
