@@ -126,6 +126,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   YAML, and JSON credential-assignment coverage.
 - See `docs/plans/2026-06-13-utf16-tracked-secret-scan.md` for the UTF-16
   tracked-text encoding boundary.
+- The pinned first-interaction v3.1.0 implementation reads both greeting
+  message inputs on every supported event; each event-scoped job therefore
+  supplies both non-secret messages while retaining its narrow write scope.
+- See `docs/plans/2026-06-13-first-interaction-required-inputs.md` for the
+  hosted greeting failure, pinned-source finding, and regression contract.
 - See `docs/plans/2026-06-12-checkout-credential-persistence.md` for the
   credential-free verification checkout contract.
 
