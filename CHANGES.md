@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Supplied both required greeting-message inputs to each event-scoped
+  first-interaction job so pinned v3.1.0 runs without weakening permissions.
+
 ## 2026-06-12
 
 - Disabled checkout credential persistence in the canonical verification job

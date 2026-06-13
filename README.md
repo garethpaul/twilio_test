@@ -122,6 +122,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   pattern and local capture-artifact coverage.
 - See `docs/plans/2026-06-10-secret-assignment-syntaxes.md` for shell, dotenv,
   YAML, and JSON credential-assignment coverage.
+- The pinned first-interaction v3.1.0 implementation reads both greeting
+  message inputs on every supported event; each event-scoped job supplies both
+  non-secret messages while retaining its narrow write scope.
+- See `docs/plans/2026-06-13-first-interaction-required-inputs.md` for the
+  hosted greeting failure, required inputs, and regression contract.
 - See `docs/plans/2026-06-12-checkout-credential-persistence.md` for the
   credential-free verification checkout contract.
 
