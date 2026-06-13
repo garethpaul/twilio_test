@@ -2,9 +2,11 @@
 
 ## 2026-06-13
 
+- Extended tracked-secret scanning to BOM-marked UTF-16 little-endian and
+  big-endian text while continuing to skip unrecognized binary data.
 - Supplied both required greeting-message inputs to each event-scoped
-  first-interaction job so pinned v3.1.0 runs without weakening permissions.
-
+  first-interaction job so the pinned v3.1.0 action runs successfully while
+  preserving least-privilege issue and pull-request permissions.
 ## 2026-06-12
 
 - Disabled checkout credential persistence in the canonical verification job
