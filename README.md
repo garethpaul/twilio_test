@@ -73,9 +73,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   not casually stage credentials, account identifiers, customer payloads, or
   HTTP archive captures.
 - Packet captures, trace files, Wrangler local secrets, PEM files, and key files
-  are also ignored. The checker scans every tracked UTF-8 text file for
-  real-looking Twilio SIDs, token/phone assignments, and private keys. Token
-  and phone checks cover shell exports plus dotenv, YAML, and JSON assignments.
+  are also ignored. The checker scans every tracked UTF-8 text file plus
+  BOM-marked UTF-16 little-endian and big-endian text for real-looking Twilio
+  SIDs, token/phone assignments, and private keys. Unrecognized binary data
+  remains skipped. Token and phone checks cover shell exports plus dotenv,
+  YAML, and JSON assignments.
 - `.env.example` documents expected Twilio variable names with empty values and
   keeps live sends disabled by default, including a placeholder body for future
   message smoke tests and an `info` log-level default. Each placeholder
@@ -122,6 +124,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   pattern and local capture-artifact coverage.
 - See `docs/plans/2026-06-10-secret-assignment-syntaxes.md` for shell, dotenv,
   YAML, and JSON credential-assignment coverage.
+- See `docs/plans/2026-06-13-utf16-tracked-secret-scan.md` for the UTF-16
+  tracked-text encoding boundary.
 - See `docs/plans/2026-06-12-checkout-credential-persistence.md` for the
   credential-free verification checkout contract.
 

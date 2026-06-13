@@ -18,6 +18,7 @@ LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
 TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
 SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
+UTF16_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf16-tracked-secret-scan.md"
 
 TRACKED_SECRET_PATTERNS = [
     (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
@@ -60,6 +61,20 @@ def env_entries(env_text):
         name, value = stripped.split("=", 1)
         entries.setdefault(name, []).append(value)
     return entries
+
+
+def decode_tracked_text(data):
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        try:
+            return data.decode("utf-16")
+        except UnicodeDecodeError:
+            return None
+    if b"\0" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
 
 
 def check_required_files():
@@ -202,12 +217,8 @@ def check_tracked_secret_patterns():
         if not relative_bytes:
             continue
         relative_path = relative_bytes.decode("utf-8")
-        data = (ROOT / relative_path).read_bytes()
-        if b"\0" in data:
-            continue
-        try:
-            text = data.decode("utf-8")
-        except UnicodeDecodeError:
+        text = decode_tracked_text((ROOT / relative_path).read_bytes())
+        if text is None:
             continue
         for pattern, description in TRACKED_SECRET_PATTERNS:
             require(
@@ -234,6 +245,23 @@ def check_secret_pattern_syntaxes():
             any(pattern.search(fixture) for pattern, _ in TRACKED_SECRET_PATTERNS),
             f"tracked-secret patterns must reject assignment syntax: {fixture}",
         )
+
+
+def check_secret_pattern_encodings():
+    token_assignment = "TWILIO_AUTH_TOKEN: " + "0123456789abcdef" * 2
+    encoded_fixtures = [
+        b"\xff\xfe" + token_assignment.encode("utf-16-le"),
+        b"\xfe\xff" + token_assignment.encode("utf-16-be"),
+    ]
+    for fixture in encoded_fixtures:
+        decoded = decode_tracked_text(fixture)
+        require(decoded == token_assignment, "UTF-16 tracked text must decode consistently")
+        require(
+            any(pattern.search(decoded) for pattern, _ in TRACKED_SECRET_PATTERNS),
+            "tracked-secret patterns must reject UTF-16 credential assignments",
+        )
+    require(decode_tracked_text(b"\x00\x01\x02\x03") is None, "binary data must remain skipped")
+    require(decode_tracked_text(b"\xff\xfe\x00") is None, "malformed UTF-16 must remain skipped")
 
 
 def check_greetings_workflow():
@@ -326,6 +354,10 @@ def check_docs_plans():
         SECRET_SYNTAX_PLAN in plans,
         f"{SECRET_SYNTAX_PLAN.relative_to(ROOT)} must be present",
     )
+    require(
+        UTF16_SECRET_SCAN_PLAN in plans,
+        f"{UTF16_SECRET_SCAN_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")
@@ -340,6 +372,7 @@ def main():
         check_secret_hygiene,
         check_tracked_secret_patterns,
         check_secret_pattern_syntaxes,
+        check_secret_pattern_encodings,
         check_greetings_workflow,
         check_hosted_verification,
         check_docs_plans,

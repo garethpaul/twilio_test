@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Extended tracked-secret scanning to BOM-marked UTF-16 little-endian and
+  big-endian text while continuing to skip unrecognized binary data.
+
 ## 2026-06-12
 
 - Disabled checkout credential persistence in the canonical verification job
