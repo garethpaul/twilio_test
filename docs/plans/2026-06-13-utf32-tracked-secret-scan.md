@@ -5,7 +5,7 @@ date: 2026-06-13
 
 # Scan UTF-32 Tracked Text for Twilio Secrets
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -56,9 +56,13 @@ Twilio credentials in tracked text.
 
 ## Verification
 
-- Focused encoding self-test and full `make check`
-- External-directory and space-containing-path `make check`
-- Hostile mutations for BOM support, ordering, byte orders, malformed input,
-  and plan completion
+- `python3 -c 'import scripts.check_repository_contracts as c;
+  c.check_secret_pattern_encodings()'` passed UTF-16 LE/BE, UTF-32 LE/BE,
+  malformed UTF-16/UTF-32, and arbitrary-binary boundaries.
+- Full local, external-directory, and space-containing-path `make check` runs
+  passed all nine repository contract groups.
+- Eight hostile mutations covering removed UTF-32 support, the wrong codec,
+  missing LE/BE BOM handling, accepted malformed input, reduced byte-order
+  fixtures, and stale plan status were rejected.
 - Workflow YAML, Python syntax, SVG XML, `git diff --check`, generated-artifact,
-  and focused secret review
+  and focused secret reviews are included in final validation.
