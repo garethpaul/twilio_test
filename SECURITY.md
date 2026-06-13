@@ -32,9 +32,9 @@ Helpful reports include:
   they can contain credentials, account identifiers, request URLs, or payloads.
 - Packet captures, trace files, `.dev.vars`, PEM files, and private key files
   should remain ignored. The repository gate scans all tracked UTF-8 text and
-  BOM-marked UTF-16 little-endian and big-endian text for real-looking Twilio
-  SIDs, populated token/phone assignments, and private-key blocks while
-  leaving unrecognized binary data uninterpreted.
+  BOM-marked UTF-16 and UTF-32 little-endian and big-endian text for
+  real-looking Twilio SIDs, populated token/phone assignments, and private-key
+  blocks while leaving unrecognized binary data uninterpreted.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 
 ## Service and API Notes

@@ -2,6 +2,10 @@
 
 ## 2026-06-13
 
+- Extended tracked-secret scanning to BOM-marked UTF-32 little-endian and
+  big-endian text before the overlapping UTF-16 BOM checks.
+- Added self-tests for UTF-32 credential detection, byte-order handling, and
+  malformed-input boundaries.
 - Extended tracked-secret scanning to BOM-marked UTF-16 little-endian and
   big-endian text while continuing to skip unrecognized binary data.
 - Supplied both required greeting-message inputs to each event-scoped
