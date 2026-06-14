@@ -18,6 +18,7 @@ LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
 TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
 SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
+DEFAULT_GREETING_INPUTS_PLAN = DOCS_PLANS / "2026-06-14-default-context-greeting-inputs.md"
 
 TRACKED_SECRET_PATTERNS = [
     (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
@@ -248,10 +249,10 @@ def check_greetings_workflow():
     require("ubuntu-latest" not in workflow, "greetings workflow must not use a floating runner")
     require(workflow.count("runs-on: ubuntu-24.04") == 2, "both greeting jobs must use Ubuntu 24.04")
     require(workflow.count("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0") == 2, "both greeting jobs must use the annotated first-interaction pin")
-    require("repo_token: ${{ github.token }}" in workflow, "greetings workflow must use the repository token")
+    require(workflow.count("repo_token: ${{ github.token }}") == 2, "both greeting jobs must use the repository token")
     require("TWILIO_" not in workflow, "placeholder workflow must not reference Twilio credentials")
-    require("issue_message:" in workflow, "greetings workflow must keep issue greeting explicit")
-    require("pr_message:" in workflow, "greetings workflow must keep pull-request greeting explicit")
+    require(workflow.count("issue_message: 'Ahoy!'") == 2, "both greeting jobs must supply the required issue message")
+    require(workflow.count("pr_message: 'Ahoy!'") == 2, "both greeting jobs must supply the required pull-request message")
     require("@v" not in workflow, "greetings workflow action must use an immutable commit")
     require("actions/checkout" not in workflow, "pull_request_target workflow must not check out contributor code")
     require(not re.search(r"^\s*run:", workflow, re.MULTILINE), "pull_request_target workflow must not execute commands")
@@ -324,6 +325,10 @@ def check_docs_plans():
     require(
         SECRET_SYNTAX_PLAN in plans,
         f"{SECRET_SYNTAX_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        DEFAULT_GREETING_INPUTS_PLAN in plans,
+        f"{DEFAULT_GREETING_INPUTS_PLAN.relative_to(ROOT)} must be present",
     )
 
     for plan in plans:

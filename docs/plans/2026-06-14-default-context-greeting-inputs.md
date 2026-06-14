@@ -1,6 +1,6 @@
 # Default-Context Greeting Inputs
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -37,3 +37,22 @@ post the greeting.
 - Do not add checkout, command execution, broader permissions, mutable action
   tags, Twilio credentials, or runtime behavior.
 - Do not merge or close any pull request without explicit owner authorization.
+
+## Work Completed
+
+- Supplied both required message inputs to both event-scoped pinned action
+  invocations on the default branch.
+- Strengthened the dependency-free contracts to require two repository-token,
+  issue-message, and pull-request-message inputs and registered this completed
+  plan.
+
+## Verification Results
+
+- Python compilation plus local and external-directory `make check` passed all
+  eight repository contract groups.
+- Four focused mutations removing either required input from either greeting
+  job were rejected.
+- Workflow YAML, whitespace, explicit-artifact, exact-diff, and changed-line
+  credential audits passed.
+- Default-branch delivery and hosted greeting evidence will be appended after
+  the normal push because `pull_request_target` reads this default-branch file.
