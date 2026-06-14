@@ -20,6 +20,7 @@ TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
 SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
 UTF16_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf16-tracked-secret-scan.md"
 UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
+MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 
 TRACKED_SECRET_PATTERNS = [
     (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
@@ -327,9 +328,14 @@ def check_hosted_verification():
     require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
     makefile = read_text("Makefile")
+    makefile_lines = set(makefile.splitlines())
     require(
-        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile,
-        "Makefile must resolve the repository root from its own location",
+        "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile_lines,
+        "Makefile must protect the repository root derived from its own location",
+    )
+    require(
+        "PYTHON ?= python3" in makefile_lines,
+        "Makefile must preserve the Python command override",
     )
     require(
         '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
@@ -377,6 +383,10 @@ def check_docs_plans():
     require(
         UTF32_SECRET_SCAN_PLAN in plans,
         f"{UTF32_SECRET_SCAN_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        MAKE_ROOT_PROTECTION_PLAN in plans,
+        f"{MAKE_ROOT_PROTECTION_PLAN.relative_to(ROOT)} must be present",
     )
 
     for plan in plans:
