@@ -5,7 +5,7 @@ date: 2026-06-14
 
 # Protect the Make Repository Root from Overrides
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -68,3 +68,25 @@ audit results before shipment.
 - Do not change secret patterns, supported encodings, workflows, dependencies,
   environment placeholders, or repository runtime scope.
 - Do not merge or close any stacked pull request without owner authorization.
+
+## Work Completed
+
+- Protected the Makefile-derived repository root with GNU Make's `override`
+  directive while preserving the configurable Python command.
+- Strengthened the portable checker to require the protected root, Python
+  override, checker invocation, and registered maintenance plan.
+
+## Verification
+
+- `python3 -m py_compile scripts/check_repository_contracts.py` passed.
+- The focused `check_hosted_verification()` contract passed.
+- Full local `make check`, external-directory `make -C <checkout> check`, and
+  hostile `make -C <checkout> ROOT=<empty-directory> check` each passed under
+  a 180-second timeout with all nine repository contract groups.
+- Eight hostile mutations were rejected: removing `override`, using `CURDIR`,
+  changing to recursive assignment, deriving from the first loaded Makefile,
+  removing Python configurability, weakening either exact checker assertion,
+  and reopening the completed plan.
+- Python compile, workflow YAML, SVG XML, intended-path, generated-artifact,
+  `git diff --check`, and changed-line secret audits passed before shipment.
+- No Twilio credentials, live requests, or external service calls were used.
