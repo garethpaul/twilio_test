@@ -54,5 +54,8 @@ post the greeting.
   job were rejected.
 - Workflow YAML, whitespace, explicit-artifact, exact-diff, and changed-line
   credential audits passed.
-- Default-branch delivery and hosted greeting evidence will be appended after
-  the normal push because `pull_request_target` reads this default-branch file.
+- A normal fast-forward push to `master` was rejected by branch protection
+  because the three required verification contexts must run through a pull
+  request. The hotfix is therefore delivered on a review branch; its own
+  `pull_request_target` greeting remains blocked by the older default-branch
+  workflow until an authorized merge updates `master`.
