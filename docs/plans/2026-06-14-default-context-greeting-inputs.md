@@ -19,7 +19,9 @@ post the greeting.
    appear once per action invocation, not merely somewhere in the workflow.
 4. Reject missing issue or pull-request inputs in either job through focused
    mutations.
-5. Land the narrow fix on the default branch so future
+5. Protect the Makefile-derived repository root from command-line overrides so
+   external validation cannot be redirected away from the reviewed checkout.
+6. Land the narrow fix on the default branch so future
    `pull_request_target` runs load the corrected workflow definition.
 
 ## Verification
@@ -45,11 +47,15 @@ post the greeting.
 - Strengthened the dependency-free contracts to require two repository-token,
   issue-message, and pull-request-message inputs and registered this completed
   plan.
+- Protected the Makefile-derived repository root and required that exact
+  definition in the portable checker.
 
 ## Verification Results
 
 - Python compilation plus local and external-directory `make check` passed all
   eight repository contract groups.
+- An external-directory `make check` with a hostile `ROOT=/nonexistent`
+  override passed against the intended checkout.
 - Four focused mutations removing either required input from either greeting
   job were rejected.
 - Workflow YAML, whitespace, explicit-artifact, exact-diff, and changed-line

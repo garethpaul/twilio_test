@@ -283,9 +283,14 @@ def check_hosted_verification():
     require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
     makefile = read_text("Makefile")
+    makefile_lines = set(makefile.splitlines())
     require(
-        "ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile,
-        "Makefile must resolve the repository root from its own location",
+        "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile_lines,
+        "Makefile must protect the repository root derived from its own location",
+    )
+    require(
+        "PYTHON ?= python3" in makefile_lines,
+        "Makefile must preserve the Python command override",
     )
     require(
         '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
