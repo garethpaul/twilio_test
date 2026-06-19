@@ -7,6 +7,7 @@ lint:
 	$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"
 
 test: lint
+	$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"
 
 build: lint
 

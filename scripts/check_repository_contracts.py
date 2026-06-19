@@ -94,6 +94,7 @@ def check_required_files():
         "docs/readme-overview.svg",
         ".github/workflows/check.yml",
         ".github/workflows/greetings.yml",
+        "scripts/test_greetings_runtime.py",
     ]:
         require((ROOT / relative_path).exists(), f"{relative_path} must stay checked in")
 
@@ -284,7 +285,10 @@ def check_secret_pattern_encodings():
 def check_greetings_workflow():
     workflow = read_text(".github/workflows/greetings.yml")
     require("issues:\n    types:\n      - opened" in workflow, "greetings workflow must greet newly opened issues")
-    require("pull_request_target:\n    types:\n      - opened" in workflow, "greetings workflow must greet newly opened pull requests, including forks")
+    require(
+        "pull_request_target:\n    types:\n      - opened\n      - reopened\n      - synchronize" in workflow,
+        "greetings workflow must recover pull-request greetings after opening, reopening, and synchronization",
+    )
     require("contents: read" in workflow, "greetings workflow must keep contents read-only")
     require("issues: write" in workflow, "greetings workflow must allow issue comments")
     require("pull-requests: write" in workflow, "greetings workflow must allow pull-request comments")
@@ -292,19 +296,50 @@ def check_greetings_workflow():
     require("runs-on: ubuntu-24.04" in workflow, "greetings workflow must use Ubuntu 24.04")
     require("ubuntu-latest" not in workflow, "greetings workflow must not use a floating runner")
     require(workflow.count("runs-on: ubuntu-24.04") == 2, "both greeting jobs must use Ubuntu 24.04")
-    require(workflow.count("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0") == 2, "both greeting jobs must use the annotated first-interaction pin")
+    require(
+        workflow.count("actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0") == 1,
+        "only the issue greeting may use the annotated first-interaction pin",
+    )
+    require(
+        workflow.count("actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0") == 1,
+        "pull-request greetings must use the annotated github-script pin",
+    )
     require("repo_token: ${{ github.token }}" in workflow, "greetings workflow must use the repository token")
+    require("github-token: ${{ github.token }}" in workflow, "pull-request greeting must use the repository token")
     require("TWILIO_" not in workflow, "placeholder workflow must not reference Twilio credentials")
-    require(workflow.count("issue_message: 'Ahoy!'") == 2, "both greeting jobs must provide the required issue message")
-    require(workflow.count("pr_message: 'Ahoy!'") == 2, "both greeting jobs must provide the required pull-request message")
+    require(workflow.count("issue_message: 'Ahoy!'") == 1, "issue greeting must provide the required issue message")
+    require(workflow.count("pr_message: 'Ahoy!'") == 1, "issue action must receive its required pull-request input")
     require("@v" not in workflow, "greetings workflow action must use an immutable commit")
     require("actions/checkout" not in workflow, "pull_request_target workflow must not check out contributor code")
     require(not re.search(r"^\s*run:", workflow, re.MULTILINE), "pull_request_target workflow must not execute commands")
     require("if: github.event_name == 'issues'" in workflow, "issue greeting must be event-scoped")
     require("if: github.event_name == 'pull_request_target'" in workflow, "pull-request greeting must be event-scoped")
+    require(
+        "group: greetings-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number }}" in workflow,
+        "all greeting events must share deterministic per-item serialization",
+    )
+    require("cancel-in-progress: false" in workflow, "greeting serialization must not cancel an active run")
+    require("const marker = '<!-- twilio-test:first-contributor-greeting:v1 -->'" in workflow, "pull-request greeting must use the deterministic marker")
+    require("context.payload.pull_request?.user?.login" in workflow, "eligibility must use the trusted pull-request author")
+    require("context.payload.sender" not in workflow, "recovery eligibility must not depend on the event sender")
+    require(workflow.count("github.paginate(") == 3, "pull-request greeting must paginate comments, issues, and pull requests")
+    require("github.rest.issues.listComments" in workflow, "pull-request greeting must inspect existing comments")
+    require("github.rest.issues.listForRepo" in workflow, "pull-request greeting must inspect issue history")
+    require("github.rest.pulls.list" in workflow, "pull-request greeting must inspect pull-request history")
+    require(workflow.count("per_page: 100") == 3, "all greeting history queries must request full pages")
+    require("comment.user?.login === 'github-actions[bot]'" in workflow, "only the automation identity may satisfy greeting state")
+    require("comment.body?.includes(marker)" in workflow, "pull-request greeting must recognize the deterministic marker")
+    require("comment.body?.trim() === greeting" in workflow, "pull-request greeting must recognize legacy exact greetings")
+    require("issue.pull_request === undefined && issue.number < issueNumber" in workflow, "eligibility must reject prior authored issues")
+    require("pull.user?.login === author && pull.number < issueNumber" in workflow, "eligibility must reject prior authored pull requests")
+    require("hasPriorIssue || hasPriorPullRequest" in workflow, "any prior contribution must suppress the greeting")
+    require("github.rest.issues.createComment" in workflow, "eligible pull requests must receive the greeting comment")
     require(workflow.count("uses:") == 2, "greetings workflow must run only the two pinned greeting actions")
     require(workflow.count("issues: write") == 1, "only the issue greeting may write issues")
     require(workflow.count("pull-requests: write") == 1, "only the pull-request greeting may write pull requests")
+    write_permissions = re.findall(r"^\s+([a-z-]+): write$", workflow, re.MULTILINE)
+    require(sorted(write_permissions) == ["issues", "pull-requests"], "greeting jobs must not gain additional write permissions")
+    require("${{ secrets." not in workflow, "greetings workflow must not read repository secrets")
 
 
 def check_hosted_verification():
@@ -340,6 +375,10 @@ def check_hosted_verification():
     require(
         '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
         "Makefile must run the checker independently of the caller's directory",
+    )
+    require(
+        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"' in makefile,
+        "Makefile must run the executable greeting regressions independently of the caller's directory",
     )
 
 
