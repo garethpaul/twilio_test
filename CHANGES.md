@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-14
+
+- Supplied both required first-interaction message inputs to each event-scoped
+  default-branch greeting job and added count-sensitive regression contracts.
+
 ## 2026-06-10
 
 - Extended tracked Twilio secret detection across shell exports, dotenv, YAML,
