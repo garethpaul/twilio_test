@@ -23,6 +23,7 @@ SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
 UTF16_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf16-tracked-secret-scan.md"
 UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
 MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
+DEFAULT_GREETING_INPUTS_PLAN = DOCS_PLANS / "2026-06-14-default-context-greeting-inputs.md"
 DEEP_REVIEW_PLAN = DOCS_PLANS / "2026-06-19-deep-review-boundaries.md"
 MAX_TRACKED_FILE_BYTES = 1024 * 1024
 MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
@@ -599,6 +600,10 @@ def check_docs_plans():
     require(
         MAKE_ROOT_PROTECTION_PLAN in plans,
         f"{MAKE_ROOT_PROTECTION_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        DEFAULT_GREETING_INPUTS_PLAN in plans,
+        f"{DEFAULT_GREETING_INPUTS_PLAN.relative_to(ROOT)} must be present",
     )
     require(DEEP_REVIEW_PLAN in plans, f"{DEEP_REVIEW_PLAN.relative_to(ROOT)} must be present")
 

@@ -7,6 +7,11 @@
 - Enforced the runtime-free placeholder and reviewed Make recipe boundary.
 - Updated checkout and github-script to current official immutable pins.
 
+## 2026-06-14
+
+- Supplied both required first-interaction message inputs to each event-scoped
+  default-branch greeting job and added count-sensitive regression contracts.
+
 ## 2026-06-13
 
 - Extended tracked-secret scanning to BOM-marked UTF-32 little-endian and
