@@ -20,6 +20,8 @@ Priority:
 - Ignore local environment files, debug logs, and HAR captures
 - Ignore packet captures, traces, local Worker secrets, and key material
 - Scan all tracked text for real-looking Twilio identifiers and secrets
+- Scan BOM-marked UTF-16 tracked text without treating arbitrary binary as text
+- Scan BOM-marked UTF-32 tracked text before overlapping UTF-16 BOM prefixes
 - Scan common shell, dotenv, YAML, and JSON secret assignment syntaxes
 - Ignore local OS and IDE metadata
 - Keep environment examples placeholder-only and live sends disabled

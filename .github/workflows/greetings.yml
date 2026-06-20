@@ -8,9 +8,15 @@ on:
   pull_request_target:
     types:
       - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: read
+
+concurrency:
+  group: greetings-${{ github.repository }}-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
 
 jobs:
   greet-issue:
@@ -35,8 +41,60 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-    - uses: actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0
+    - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
-        repo_token: ${{ github.token }}
-        issue_message: 'Ahoy!'
-        pr_message: 'Ahoy!'
+        github-token: ${{ github.token }}
+        script: |
+          const greeting = 'Ahoy!'
+          const marker = '<!-- twilio-test:first-contributor-greeting:v1 -->'
+          const body = `${greeting}\n\n${marker}`
+          const owner = context.issue.owner
+          const repo = context.issue.repo
+          const issueNumber = context.issue.number
+          const author = context.payload.pull_request?.user?.login
+
+          if (!author) {
+            core.setFailed('Pull request author is unavailable.')
+            return
+          }
+
+          const comments = await github.paginate(
+            github.rest.issues.listComments,
+            { owner, repo, issue_number: issueNumber, per_page: 100 }
+          )
+          const alreadyGreeted = comments.some(comment =>
+            comment.user?.login === 'github-actions[bot]' &&
+            (comment.body?.includes(marker) || comment.body?.trim() === greeting)
+          )
+          if (alreadyGreeted) {
+            core.info('Greeting already exists; no comment created.')
+            return
+          }
+
+          const issues = await github.paginate(
+            github.rest.issues.listForRepo,
+            { owner, repo, creator: author, state: 'all', per_page: 100 }
+          )
+          const hasPriorIssue = issues.some(issue =>
+            issue.pull_request === undefined && issue.number < issueNumber
+          )
+
+          const pulls = await github.paginate(
+            github.rest.pulls.list,
+            { owner, repo, state: 'all', per_page: 100 }
+          )
+          const hasPriorPullRequest = pulls.some(pull =>
+            pull.user?.login === author && pull.number < issueNumber
+          )
+
+          if (hasPriorIssue || hasPriorPullRequest) {
+            core.info('Skipping...Not First Contribution')
+            return
+          }
+
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: issueNumber,
+            body
+          })

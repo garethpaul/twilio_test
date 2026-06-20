@@ -1,9 +1,32 @@
 # Changes
 
+## 2026-06-19
+
+- Bounded tracked secret scans, rejected symlinks and special entries, and
+  covered UTF-8 BOM plus BOM-less UTF-16/UTF-32 encodings.
+- Enforced the runtime-free placeholder and reviewed Make recipe boundary.
+- Updated checkout and github-script to current official immutable pins.
+
 ## 2026-06-14
 
 - Supplied both required first-interaction message inputs to each event-scoped
   default-branch greeting job and added count-sensitive regression contracts.
+
+## 2026-06-13
+
+- Extended tracked-secret scanning to BOM-marked UTF-32 little-endian and
+  big-endian text before the overlapping UTF-16 BOM checks.
+- Added self-tests for UTF-32 credential detection, byte-order handling, and
+  malformed-input boundaries.
+- Extended tracked-secret scanning to BOM-marked UTF-16 little-endian and
+  big-endian text while continuing to skip unrecognized binary data.
+- Supplied both required greeting-message inputs to each event-scoped
+  first-interaction job so the pinned v3.1.0 action runs successfully while
+  preserving least-privilege issue and pull-request permissions.
+## 2026-06-12
+
+- Disabled checkout credential persistence in the canonical verification job
+  and added a fail-closed local workflow contract for the setting.
 
 ## 2026-06-10
 
