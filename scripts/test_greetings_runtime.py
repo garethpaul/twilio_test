@@ -28,7 +28,7 @@ FIRST_INTERACTION_URL = (
 FIRST_INTERACTION_PIN = (
     "actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3.1.0"
 )
-GITHUB_SCRIPT_PIN = "actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0"
+GITHUB_SCRIPT_PIN = "actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0"
 
 
 def fail(message: str) -> int:

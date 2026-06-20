@@ -2,7 +2,9 @@
 """Static integrity checks for the sparse Twilio placeholder repository."""
 
 from pathlib import Path
+import os
 import re
+import stat
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -21,6 +23,60 @@ SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
 UTF16_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf16-tracked-secret-scan.md"
 UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
 MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
+DEEP_REVIEW_PLAN = DOCS_PLANS / "2026-06-19-deep-review-boundaries.md"
+MAX_TRACKED_FILE_BYTES = 1024 * 1024
+MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
+MAX_TRACKED_FILES = 4096
+ALLOWED_SOURCE_PATHS = {
+    "scripts/check_repository_contracts.py",
+    "scripts/test_greetings_runtime.py",
+    "tests/test_repository_contracts.py",
+}
+RUNTIME_MANIFESTS = {
+    "Gemfile",
+    "Package.swift",
+    "Podfile",
+    "build.gradle",
+    "build.gradle.kts",
+    "composer.json",
+    "go.mod",
+    "package.json",
+    "pom.xml",
+    "pyproject.toml",
+    "requirements.txt",
+}
+RUNTIME_SUFFIXES = {
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cs",
+    ".dart",
+    ".ex",
+    ".exs",
+    ".fs",
+    ".go",
+    ".h",
+    ".hpp",
+    ".java",
+    ".js",
+    ".jsx",
+    ".kt",
+    ".kts",
+    ".lua",
+    ".m",
+    ".mm",
+    ".mjs",
+    ".php",
+    ".pl",
+    ".py",
+    ".rb",
+    ".rs",
+    ".scala",
+    ".sh",
+    ".swift",
+    ".ts",
+    ".tsx",
+}
 
 TRACKED_SECRET_PATTERNS = [
     (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
@@ -65,6 +121,26 @@ def env_entries(env_text):
     return entries
 
 
+def is_text_candidate(text):
+    if not text:
+        return False
+    return all(character in "\t\n\r" or ord(character) >= 32 and ord(character) != 127 for character in text)
+
+
+def matches_null_layout(data, width, significant_lane):
+    if len(data) < width or len(data) % width:
+        return False
+    lanes = [data[index::width] for index in range(width)]
+    for index, lane in enumerate(lanes):
+        null_fraction = lane.count(0) / len(lane)
+        if index == significant_lane:
+            if null_fraction > 0.2:
+                return False
+        elif null_fraction < 0.75:
+            return False
+    return True
+
+
 def decode_tracked_text(data):
     if data.startswith((b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
         try:
@@ -76,12 +152,94 @@ def decode_tracked_text(data):
             return data.decode("utf-16")
         except UnicodeDecodeError:
             return None
+    if data.startswith(b"\xef\xbb\xbf"):
+        try:
+            return data.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            return None
+    for encoding, width, significant_lane in [
+        ("utf-32-le", 4, 0),
+        ("utf-32-be", 4, 3),
+        ("utf-16-le", 2, 0),
+        ("utf-16-be", 2, 1),
+    ]:
+        if not matches_null_layout(data, width, significant_lane):
+            continue
+        try:
+            decoded = data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+        if is_text_candidate(decoded):
+            return decoded
     if b"\0" in data:
         return None
     try:
         return data.decode("utf-8")
     except UnicodeDecodeError:
         return None
+
+
+def tracked_index_entries():
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "--stage", "-z"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+    except subprocess.SubprocessError as exc:
+        raise AssertionError("unable to enumerate tracked files safely") from exc
+    records = [record for record in result.stdout.split(b"\0") if record]
+    require(len(records) <= MAX_TRACKED_FILES, f"tracked file count exceeds {MAX_TRACKED_FILES}")
+    entries = []
+    for record in records:
+        try:
+            metadata, path_bytes = record.split(b"\t", 1)
+            mode, _object_id, stage = metadata.split(b" ", 2)
+            relative_path = path_bytes.decode("utf-8")
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise AssertionError("tracked paths and index records must use canonical UTF-8") from exc
+        path = Path(relative_path)
+        require(not path.is_absolute() and ".." not in path.parts, "tracked path must remain repository-relative")
+        require(stage == b"0", f"{relative_path} must not contain unresolved index stages")
+        entries.append((mode.decode("ascii"), relative_path))
+    return entries
+
+
+def read_tracked_regular_file(mode, relative_path):
+    require(mode in {"100644", "100755"}, f"{relative_path} must be a tracked regular file, not a symlink or special entry")
+    path = ROOT / relative_path
+    try:
+        metadata = path.lstat()
+    except OSError as exc:
+        raise AssertionError(f"{relative_path} must exist as a tracked regular file") from exc
+    require(stat.S_ISREG(metadata.st_mode), f"{relative_path} must be a regular file, not a symlink or special entry")
+    require(
+        metadata.st_size <= MAX_TRACKED_FILE_BYTES,
+        f"{relative_path} exceeds the {MAX_TRACKED_FILE_BYTES}-byte tracked-file size limit",
+    )
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+        try:
+            opened_metadata = os.fstat(descriptor)
+            require(stat.S_ISREG(opened_metadata.st_mode), f"{relative_path} must remain a regular file while scanned")
+            require(
+                (opened_metadata.st_dev, opened_metadata.st_ino) == (metadata.st_dev, metadata.st_ino),
+                f"{relative_path} changed while its type was validated",
+            )
+            data = bytearray()
+            while len(data) <= MAX_TRACKED_FILE_BYTES:
+                chunk = os.read(descriptor, min(65536, MAX_TRACKED_FILE_BYTES + 1 - len(data)))
+                if not chunk:
+                    break
+                data.extend(chunk)
+        finally:
+            os.close(descriptor)
+    except OSError as exc:
+        raise AssertionError(f"{relative_path} could not be opened safely without following links") from exc
+    require(len(data) <= MAX_TRACKED_FILE_BYTES, f"{relative_path} grew beyond the tracked-file size limit")
+    return bytes(data)
 
 
 def check_required_files():
@@ -118,6 +276,13 @@ def check_placeholder_scope():
         "docs/plans/2026-06-08-secret-hygiene.md" in readme,
         "README must link the secret hygiene plan",
     )
+    for _mode, relative_path in tracked_index_entries():
+        path = Path(relative_path)
+        is_runtime_surface = path.name in RUNTIME_MANIFESTS or path.suffix.lower() in RUNTIME_SUFFIXES
+        require(
+            not is_runtime_surface or relative_path in ALLOWED_SOURCE_PATHS,
+            f"placeholder repository must not add provider runtime surface: {relative_path}",
+        )
 
 
 def check_secret_hygiene():
@@ -216,16 +381,15 @@ def check_secret_hygiene():
 
 
 def check_tracked_secret_patterns():
-    tracked = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files", "-z"],
-        check=True,
-        capture_output=True,
-    ).stdout.split(b"\0")
-    for relative_bytes in tracked:
-        if not relative_bytes:
-            continue
-        relative_path = relative_bytes.decode("utf-8")
-        text = decode_tracked_text((ROOT / relative_path).read_bytes())
+    total_bytes = 0
+    for mode, relative_path in tracked_index_entries():
+        data = read_tracked_regular_file(mode, relative_path)
+        total_bytes += len(data)
+        require(
+            total_bytes <= MAX_TRACKED_TOTAL_BYTES,
+            f"tracked-file aggregate scan exceeds the {MAX_TRACKED_TOTAL_BYTES}-byte budget",
+        )
+        text = decode_tracked_text(data)
         if text is None:
             continue
         for pattern, description in TRACKED_SECRET_PATTERNS:
@@ -236,7 +400,7 @@ def check_tracked_secret_patterns():
 
 
 def check_secret_pattern_syntaxes():
-    token = "0123456789abcdef" * 2
+    token = "0" * 32
     first_phone = "+1555" + "1234567"
     second_phone = "+1555" + "7654321"
     third_phone = "+1555" + "9876543"
@@ -256,17 +420,18 @@ def check_secret_pattern_syntaxes():
 
 
 def check_secret_pattern_encodings():
-    token_assignment = "TWILIO_AUTH_TOKEN: " + "0123456789abcdef" * 2
+    token_assignment = "TWILIO_AUTH_TOKEN: " + "0" * 32
     encoded_fixtures = {
+        "UTF-8 BOM": token_assignment.encode("utf-8-sig"),
         "UTF-16 LE": b"\xff\xfe" + token_assignment.encode("utf-16-le"),
         "UTF-16 BE": b"\xfe\xff" + token_assignment.encode("utf-16-be"),
         "UTF-32 LE": b"\xff\xfe\x00\x00" + token_assignment.encode("utf-32-le"),
         "UTF-32 BE": b"\x00\x00\xfe\xff" + token_assignment.encode("utf-32-be"),
+        "UTF-16 LE without BOM": token_assignment.encode("utf-16-le"),
+        "UTF-16 BE without BOM": token_assignment.encode("utf-16-be"),
+        "UTF-32 LE without BOM": token_assignment.encode("utf-32-le"),
+        "UTF-32 BE without BOM": token_assignment.encode("utf-32-be"),
     }
-    require(
-        set(encoded_fixtures) == {"UTF-16 LE", "UTF-16 BE", "UTF-32 LE", "UTF-32 BE"},
-        "encoding fixtures must cover both byte orders for UTF-16 and UTF-32",
-    )
     for encoding, fixture in encoded_fixtures.items():
         decoded = decode_tracked_text(fixture)
         require(decoded == token_assignment, f"{encoding} tracked text must decode consistently")
@@ -301,7 +466,7 @@ def check_greetings_workflow():
         "only the issue greeting may use the annotated first-interaction pin",
     )
     require(
-        workflow.count("actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0") == 1,
+        workflow.count("actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0") == 1,
         "pull-request greetings must use the annotated github-script pin",
     )
     require("repo_token: ${{ github.token }}" in workflow, "greetings workflow must use the repository token")
@@ -354,7 +519,7 @@ def check_hosted_verification():
         "runs-on: ubuntu-24.04",
         "timeout-minutes: 5",
         'python-version: ["3.10", "3.12", "3.14"]',
-        "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
+        "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0",
         "persist-credentials: false",
         "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0",
         "run: make check",
@@ -362,6 +527,7 @@ def check_hosted_verification():
         require(contract in workflow, f"hosted verification must include {contract!r}")
     require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
+    require(workflow.count("run:") == 1, "hosted verification must expose only the reviewed make check command")
     makefile = read_text("Makefile")
     makefile_lines = set(makefile.splitlines())
     require(
@@ -380,6 +546,13 @@ def check_hosted_verification():
         '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"' in makefile,
         "Makefile must run the executable greeting regressions independently of the caller's directory",
     )
+    expected_recipes = {
+        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"',
+        '$(PYTHON) -m unittest discover -v -s "$(ROOT)/tests" -p "test_*.py"',
+        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"',
+    }
+    recipes = {line.strip() for line in makefile.splitlines() if line.startswith("\t")}
+    require(recipes == expected_recipes, "Makefile recipes must remain limited to the three reviewed verification commands")
 
 
 def check_docs_plans():
@@ -427,6 +600,7 @@ def check_docs_plans():
         MAKE_ROOT_PROTECTION_PLAN in plans,
         f"{MAKE_ROOT_PROTECTION_PLAN.relative_to(ROOT)} must be present",
     )
+    require(DEEP_REVIEW_PLAN in plans, f"{DEEP_REVIEW_PLAN.relative_to(ROOT)} must be present")
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")

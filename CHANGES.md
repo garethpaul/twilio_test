@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-19
+
+- Bounded tracked secret scans, rejected symlinks and special entries, and
+  covered UTF-8 BOM plus BOM-less UTF-16/UTF-32 encodings.
+- Enforced the runtime-free placeholder and reviewed Make recipe boundary.
+- Updated checkout and github-script to current official immutable pins.
+
 ## 2026-06-13
 
 - Extended tracked-secret scanning to BOM-marked UTF-32 little-endian and
