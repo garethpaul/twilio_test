@@ -25,12 +25,14 @@ UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
 MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 DEFAULT_GREETING_INPUTS_PLAN = DOCS_PLANS / "2026-06-14-default-context-greeting-inputs.md"
 DEEP_REVIEW_PLAN = DOCS_PLANS / "2026-06-19-deep-review-boundaries.md"
+MAKE_AUTHORITY_PLAN = DOCS_PLANS / "2026-06-21-make-authority-hardening.md"
 MAX_TRACKED_FILE_BYTES = 1024 * 1024
 MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
 MAX_TRACKED_FILES = 4096
 ALLOWED_SOURCE_PATHS = {
     "scripts/check_repository_contracts.py",
     "scripts/test_greetings_runtime.py",
+    "scripts/test_makefile_authority.py",
     "tests/test_repository_contracts.py",
 }
 RUNTIME_MANIFESTS = {
@@ -532,7 +534,7 @@ def check_hosted_verification():
     makefile = read_text("Makefile")
     makefile_lines = set(makefile.splitlines())
     require(
-        "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile_lines,
+        "override ROOT := $(REPOSITORY_ROOT)" in makefile_lines,
         "Makefile must protect the repository root derived from its own location",
     )
     require(
@@ -540,20 +542,37 @@ def check_hosted_verification():
         "Makefile must preserve the Python command override",
     )
     require(
-        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
+        "override PYTHON := $(value PYTHON)" in makefile_lines,
+        "Makefile must preserve Python command text without Make re-expansion",
+    )
+    for authority_contract in [
+        "override SHELL := /bin/sh",
+        "MAKEFLAGS must not be overridden for repository verification",
+        "MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone",
+        "MAKEFILE_LIST must not be overridden",
+    ]:
+        require(authority_contract in makefile, f"Makefile must include {authority_contract!r}")
+    require(
+        '$$PYTHON "$$ROOT/scripts/check_repository_contracts.py"' in makefile,
         "Makefile must run the checker independently of the caller's directory",
     )
     require(
-        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"' in makefile,
+        '$$PYTHON "$$ROOT/scripts/test_greetings_runtime.py"' in makefile,
         "Makefile must run the executable greeting regressions independently of the caller's directory",
     )
+    require(
+        '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"' in makefile,
+        "Makefile must run the adversarial authority regressions independently of the caller's directory",
+    )
     expected_recipes = {
-        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"',
-        '$(PYTHON) -m unittest discover -v -s "$(ROOT)/tests" -p "test_*.py"',
-        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"',
+        "@:",
+        '$$PYTHON "$$ROOT/scripts/check_repository_contracts.py"',
+        '$$PYTHON -m unittest discover -v -s "$$ROOT/tests" -p "test_*.py"',
+        '$$PYTHON "$$ROOT/scripts/test_greetings_runtime.py"',
+        '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"',
     }
     recipes = {line.strip() for line in makefile.splitlines() if line.startswith("\t")}
-    require(recipes == expected_recipes, "Makefile recipes must remain limited to the three reviewed verification commands")
+    require(recipes == expected_recipes, "Makefile recipes must remain limited to reviewed verification commands")
 
 
 def check_docs_plans():
@@ -606,6 +625,7 @@ def check_docs_plans():
         f"{DEFAULT_GREETING_INPUTS_PLAN.relative_to(ROOT)} must be present",
     )
     require(DEEP_REVIEW_PLAN in plans, f"{DEEP_REVIEW_PLAN.relative_to(ROOT)} must be present")
+    require(MAKE_AUTHORITY_PLAN in plans, f"{MAKE_AUTHORITY_PLAN.relative_to(ROOT)} must be present")
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")

@@ -138,7 +138,14 @@ class WorkflowPolicyTests(unittest.TestCase):
     def test_unittest_recipe_is_location_independent(self):
         makefile = (REPOSITORY_ROOT / "Makefile").read_text(encoding="utf-8")
         self.assertIn(
-            '$(PYTHON) -m unittest discover -v -s "$(ROOT)/tests" -p "test_*.py"',
+            '$$PYTHON -m unittest discover -v -s "$$ROOT/tests" -p "test_*.py"',
+            makefile,
+        )
+
+    def test_make_authority_recipe_is_location_independent(self):
+        makefile = (REPOSITORY_ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn(
+            '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"',
             makefile,
         )
 

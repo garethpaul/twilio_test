@@ -1,5 +1,9 @@
 # Changes
 
+- Hardened `make check` against Make-syntax Python expansion, caller shell and
+  Makefile identity replacement, execution-skipping flags, and startup-file
+  configuration while preserving literal multiword Python overrides.
+
 ## 2026-06-19
 
 - Bounded tracked secret scans, rejected symlinks and special entries, and

@@ -42,6 +42,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - No single runtime entry point was identified. Start by reading the source files and manifests listed above.
 - Run `make check` to check the placeholder documentation and GitHub workflow contract.
+- When invoked with the checked-in Makefile alone, verification protects its
+  repository root and shell, preserves literal multiword Python overrides, and
+  rejects skipped-mode flags, populated `MAKEFILES`, and `MAKEFILE_LIST`
+  replacement. Startup files and later caller `-f` files remain outside the
+  documented GNU Make trust boundary.
 - Copy `.env.example` to `.env` only for local experiments. Keep the placeholder
   values empty until a real mock or sandbox test harness exists.
 
@@ -132,6 +137,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ordering and tracked-text encoding boundary.
 - See `docs/plans/2026-06-19-deep-review-boundaries.md` for bounded scanning,
   runtime-free placeholder enforcement, and current workflow pins.
+- See `docs/plans/2026-06-21-make-authority-hardening.md` for Python command,
+  shell, flag, startup-file, and Makefile-identity authority checks.
 - The pinned first-interaction v3.1.0 implementation reads both greeting
   message inputs on every supported event; each event-scoped job therefore
   supplies both non-secret messages while retaining its narrow write scope.
