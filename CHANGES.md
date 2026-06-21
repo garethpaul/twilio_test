@@ -1,5 +1,9 @@
 # Changes
 
+- Added a physical-root `check|lint` wrapper for hosted and contributor
+  verification, clearing all five GNU Make control variables before Make starts
+  and covering dry-run, ignore-errors, startup-file, `--eval`, and extra-`-f`
+  authority paths.
 - Hardened `make check` against Make-syntax Python expansion, caller shell and
   Makefile identity replacement, execution-skipping flags, and startup-file
   configuration while preserving literal multiword Python overrides.

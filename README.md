@@ -41,12 +41,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Running or Using the Project
 
 - No single runtime entry point was identified. Start by reading the source files and manifests listed above.
-- Run `make check` to check the placeholder documentation and GitHub workflow contract.
-- When invoked with the checked-in Makefile alone, verification protects its
-  repository root and shell, preserves literal multiword Python overrides, and
-  rejects skipped-mode flags, populated `MAKEFILES`, and `MAKEFILE_LIST`
-  replacement. Startup files and later caller `-f` files remain outside the
-  documented GNU Make trust boundary.
+- Run `./scripts/run-make.sh check` to check the placeholder documentation and
+  GitHub workflow contract through the reviewed repository entrypoint.
+- The wrapper resolves its physical checkout, accepts only `check` or `lint`,
+  clears `MAKEFILES`, `MAKEFLAGS`, `MFLAGS`, `MAKEOVERRIDES`, and
+  `GNUMAKEFLAGS`, and invokes the physical Makefile with fixed system tools.
+  Raw GNU Make startup files, `--eval`, and earlier or later caller `-f` files
+  execute before or outside repository policy and are caller authority.
+- Literal `PYTHON` command text and executable lookup through `PATH` remain
+  caller authority for local use. Make-syntax Python values are rejected.
 - Copy `.env.example` to `.env` only for local experiments. Keep the placeholder
   values empty until a real mock or sandbox test harness exists.
 
@@ -59,7 +62,8 @@ adding runtime code. In particular, live calls and messages must remain opt-in.
 
 ## Testing and Verification
 
-- `make check`
+- `./scripts/run-make.sh check` (the supported hosted and contributor gate)
+- `make check` (direct Make invocation for trusted local callers only)
 - GitHub Actions runs the same contracts on Python 3.10, 3.12, and 3.14 with
   read-only repository contents permissions, Ubuntu 24.04, and immutable action
   pins; checkout credentials are not persisted for later steps.

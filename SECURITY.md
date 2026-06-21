@@ -36,6 +36,15 @@ Helpful reports include:
   real-looking Twilio SIDs, populated token/phone assignments, and private-key
   blocks while leaving unrecognized binary data uninterpreted.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
+- Use `./scripts/run-make.sh check` for repository verification. The wrapper
+  resolves the physical checkout, accepts only the reviewed `check` or `lint`
+  target, clears GNU Make startup and option variables, and invokes the
+  physical Makefile with fixed system tools. Direct GNU Make options,
+  `MAKEFILES`, `--eval`, and additional `-f` files are caller authority before
+  or outside repository policy.
+- Literal `PYTHON` selection and executable lookup through the caller's `PATH`
+  remain intentionally caller-controlled for local toolchain selection. Do not
+  treat verification run under an untrusted interpreter or `PATH` as trusted.
 
 ## Service and API Notes
 

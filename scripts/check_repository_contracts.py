@@ -31,6 +31,7 @@ MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
 MAX_TRACKED_FILES = 4096
 ALLOWED_SOURCE_PATHS = {
     "scripts/check_repository_contracts.py",
+    "scripts/run-make.sh",
     "scripts/test_greetings_runtime.py",
     "scripts/test_makefile_authority.py",
     "tests/test_repository_contracts.py",
@@ -255,6 +256,7 @@ def check_required_files():
         "docs/readme-overview.svg",
         ".github/workflows/check.yml",
         ".github/workflows/greetings.yml",
+        "scripts/run-make.sh",
         "scripts/test_greetings_runtime.py",
     ]:
         require((ROOT / relative_path).exists(), f"{relative_path} must stay checked in")
@@ -525,12 +527,27 @@ def check_hosted_verification():
         "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0",
         "persist-credentials: false",
         "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0",
-        "run: make check",
+        "run: ./scripts/run-make.sh check",
     ]:
         require(contract in workflow, f"hosted verification must include {contract!r}")
     require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
-    require(workflow.count("run:") == 1, "hosted verification must expose only the reviewed make check command")
+    require("run: make check" not in workflow, "hosted verification must not invoke raw Make")
+    require(workflow.count("run:") == 1, "hosted verification must expose only the reviewed Make wrapper command")
+    wrapper = read_text("scripts/run-make.sh")
+    wrapper_lines = set(wrapper.splitlines())
+    for wrapper_contract in [
+        "#!/bin/sh",
+        "set -eu",
+        "while [ -L \"$SCRIPT_PATH\" ]; do",
+        "  if ! LINK_TARGET_WITH_SENTINEL=$(/usr/bin/readlink -n \"$SCRIPT_PATH\" && printf x); then",
+        "ROOT_DIR=$(CDPATH='' cd -P \"$SCRIPT_DIR/..\" && /bin/pwd -P)",
+        "  check|lint) TARGET=$1 ;;",
+        'exec /usr/bin/env -u MAKEFILES -u MAKEFLAGS -u MFLAGS -u MAKEOVERRIDES -u GNUMAKEFLAGS /usr/bin/make --no-print-directory -f "$ROOT_DIR/Makefile" "$TARGET"',
+    ]:
+        require(wrapper_contract in wrapper_lines, f"Make wrapper must include {wrapper_contract!r}")
+    require("$@" not in wrapper, "Make wrapper must not forward unrestricted arguments")
+    require("LINK_COUNT=0" in wrapper and '"$LINK_COUNT" -gt 40' in wrapper, "Make wrapper must bound symlink resolution")
     makefile = read_text("Makefile")
     makefile_lines = set(makefile.splitlines())
     require(

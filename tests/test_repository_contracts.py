@@ -101,6 +101,9 @@ class TrackedFileBoundaryTests(unittest.TestCase):
 
 
 class PlaceholderScopeTests(unittest.TestCase):
+    def test_allows_reviewed_make_wrapper(self):
+        CONTRACTS.check_placeholder_scope()
+
     def test_rejects_provider_runtime_source(self):
         with temporary_repository(copy_checkout=True) as repository:
             (repository / "send.py").write_text(
@@ -126,6 +129,18 @@ class WorkflowPolicyTests(unittest.TestCase):
             "actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0",
             greetings_workflow,
         )
+
+    def test_hosted_verification_uses_sanitized_make_wrapper(self):
+        check_workflow = (REPOSITORY_ROOT / ".github/workflows/check.yml").read_text(encoding="utf-8")
+        self.assertIn("run: ./scripts/run-make.sh check", check_workflow)
+        self.assertNotIn("run: make check", check_workflow)
+
+    def test_make_wrapper_is_present_and_location_independent(self):
+        wrapper = REPOSITORY_ROOT / "scripts/run-make.sh"
+        self.assertTrue(wrapper.is_file())
+        wrapper_text = wrapper.read_text(encoding="utf-8")
+        self.assertIn('/usr/bin/env -u MAKEFILES -u MAKEFLAGS -u MFLAGS -u MAKEOVERRIDES -u GNUMAKEFLAGS', wrapper_text)
+        self.assertIn('/usr/bin/make --no-print-directory -f "$ROOT_DIR/Makefile" "$TARGET"', wrapper_text)
 
     def test_rejects_unreviewed_make_recipe(self):
         with temporary_repository(copy_checkout=True) as repository:
