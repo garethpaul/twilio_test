@@ -101,6 +101,9 @@ class TrackedFileBoundaryTests(unittest.TestCase):
 
 
 class PlaceholderScopeTests(unittest.TestCase):
+    def test_allows_reviewed_make_wrapper(self):
+        CONTRACTS.check_placeholder_scope()
+
     def test_rejects_provider_runtime_source(self):
         with temporary_repository(copy_checkout=True) as repository:
             (repository / "send.py").write_text(
@@ -127,6 +130,18 @@ class WorkflowPolicyTests(unittest.TestCase):
             greetings_workflow,
         )
 
+    def test_hosted_verification_uses_sanitized_make_wrapper(self):
+        check_workflow = (REPOSITORY_ROOT / ".github/workflows/check.yml").read_text(encoding="utf-8")
+        self.assertIn("run: ./scripts/run-make.sh check", check_workflow)
+        self.assertNotIn("run: make check", check_workflow)
+
+    def test_make_wrapper_is_present_and_location_independent(self):
+        wrapper = REPOSITORY_ROOT / "scripts/run-make.sh"
+        self.assertTrue(wrapper.is_file())
+        wrapper_text = wrapper.read_text(encoding="utf-8")
+        self.assertIn('/usr/bin/env -u MAKEFILES -u MAKEFLAGS -u MFLAGS -u MAKEOVERRIDES -u GNUMAKEFLAGS', wrapper_text)
+        self.assertIn('/usr/bin/make --no-print-directory -f "$ROOT_DIR/Makefile" "$TARGET"', wrapper_text)
+
     def test_rejects_unreviewed_make_recipe(self):
         with temporary_repository(copy_checkout=True) as repository:
             with (repository / "Makefile").open("a", encoding="utf-8") as makefile:
@@ -138,7 +153,14 @@ class WorkflowPolicyTests(unittest.TestCase):
     def test_unittest_recipe_is_location_independent(self):
         makefile = (REPOSITORY_ROOT / "Makefile").read_text(encoding="utf-8")
         self.assertIn(
-            '$(PYTHON) -m unittest discover -v -s "$(ROOT)/tests" -p "test_*.py"',
+            '$$PYTHON -m unittest discover -v -s "$$ROOT/tests" -p "test_*.py"',
+            makefile,
+        )
+
+    def test_make_authority_recipe_is_location_independent(self):
+        makefile = (REPOSITORY_ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn(
+            '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"',
             makefile,
         )
 

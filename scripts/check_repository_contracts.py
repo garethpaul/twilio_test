@@ -25,12 +25,15 @@ UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
 MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
 DEFAULT_GREETING_INPUTS_PLAN = DOCS_PLANS / "2026-06-14-default-context-greeting-inputs.md"
 DEEP_REVIEW_PLAN = DOCS_PLANS / "2026-06-19-deep-review-boundaries.md"
+MAKE_AUTHORITY_PLAN = DOCS_PLANS / "2026-06-21-make-authority-hardening.md"
 MAX_TRACKED_FILE_BYTES = 1024 * 1024
 MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
 MAX_TRACKED_FILES = 4096
 ALLOWED_SOURCE_PATHS = {
     "scripts/check_repository_contracts.py",
+    "scripts/run-make.sh",
     "scripts/test_greetings_runtime.py",
+    "scripts/test_makefile_authority.py",
     "tests/test_repository_contracts.py",
 }
 RUNTIME_MANIFESTS = {
@@ -253,6 +256,7 @@ def check_required_files():
         "docs/readme-overview.svg",
         ".github/workflows/check.yml",
         ".github/workflows/greetings.yml",
+        "scripts/run-make.sh",
         "scripts/test_greetings_runtime.py",
     ]:
         require((ROOT / relative_path).exists(), f"{relative_path} must stay checked in")
@@ -523,16 +527,31 @@ def check_hosted_verification():
         "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0",
         "persist-credentials: false",
         "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0",
-        "run: make check",
+        "run: ./scripts/run-make.sh check",
     ]:
         require(contract in workflow, f"hosted verification must include {contract!r}")
     require("ubuntu-latest" not in workflow, "hosted verification must not use a floating runner")
     require("@v" not in workflow, "hosted verification actions must use immutable commits")
-    require(workflow.count("run:") == 1, "hosted verification must expose only the reviewed make check command")
+    require("run: make check" not in workflow, "hosted verification must not invoke raw Make")
+    require(workflow.count("run:") == 1, "hosted verification must expose only the reviewed Make wrapper command")
+    wrapper = read_text("scripts/run-make.sh")
+    wrapper_lines = set(wrapper.splitlines())
+    for wrapper_contract in [
+        "#!/bin/sh",
+        "set -eu",
+        "while [ -L \"$SCRIPT_PATH\" ]; do",
+        "  if ! LINK_TARGET_WITH_SENTINEL=$(/usr/bin/readlink -n \"$SCRIPT_PATH\" && printf x); then",
+        "ROOT_DIR=$(CDPATH='' cd -P \"$SCRIPT_DIR/..\" && /bin/pwd -P)",
+        "  check|lint) TARGET=$1 ;;",
+        'exec /usr/bin/env -u MAKEFILES -u MAKEFLAGS -u MFLAGS -u MAKEOVERRIDES -u GNUMAKEFLAGS /usr/bin/make --no-print-directory -f "$ROOT_DIR/Makefile" "$TARGET"',
+    ]:
+        require(wrapper_contract in wrapper_lines, f"Make wrapper must include {wrapper_contract!r}")
+    require("$@" not in wrapper, "Make wrapper must not forward unrestricted arguments")
+    require("LINK_COUNT=0" in wrapper and '"$LINK_COUNT" -gt 40' in wrapper, "Make wrapper must bound symlink resolution")
     makefile = read_text("Makefile")
     makefile_lines = set(makefile.splitlines())
     require(
-        "override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))" in makefile_lines,
+        "override ROOT := $(REPOSITORY_ROOT)" in makefile_lines,
         "Makefile must protect the repository root derived from its own location",
     )
     require(
@@ -540,20 +559,37 @@ def check_hosted_verification():
         "Makefile must preserve the Python command override",
     )
     require(
-        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"' in makefile,
+        "override PYTHON := $(value PYTHON)" in makefile_lines,
+        "Makefile must preserve Python command text without Make re-expansion",
+    )
+    for authority_contract in [
+        "override SHELL := /bin/sh",
+        "MAKEFLAGS must not be overridden for repository verification",
+        "MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone",
+        "MAKEFILE_LIST must not be overridden",
+    ]:
+        require(authority_contract in makefile, f"Makefile must include {authority_contract!r}")
+    require(
+        '$$PYTHON "$$ROOT/scripts/check_repository_contracts.py"' in makefile,
         "Makefile must run the checker independently of the caller's directory",
     )
     require(
-        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"' in makefile,
+        '$$PYTHON "$$ROOT/scripts/test_greetings_runtime.py"' in makefile,
         "Makefile must run the executable greeting regressions independently of the caller's directory",
     )
+    require(
+        '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"' in makefile,
+        "Makefile must run the adversarial authority regressions independently of the caller's directory",
+    )
     expected_recipes = {
-        '$(PYTHON) "$(ROOT)/scripts/check_repository_contracts.py"',
-        '$(PYTHON) -m unittest discover -v -s "$(ROOT)/tests" -p "test_*.py"',
-        '$(PYTHON) "$(ROOT)/scripts/test_greetings_runtime.py"',
+        "@:",
+        '$$PYTHON "$$ROOT/scripts/check_repository_contracts.py"',
+        '$$PYTHON -m unittest discover -v -s "$$ROOT/tests" -p "test_*.py"',
+        '$$PYTHON "$$ROOT/scripts/test_greetings_runtime.py"',
+        '$$PYTHON "$$ROOT/scripts/test_makefile_authority.py"',
     }
     recipes = {line.strip() for line in makefile.splitlines() if line.startswith("\t")}
-    require(recipes == expected_recipes, "Makefile recipes must remain limited to the three reviewed verification commands")
+    require(recipes == expected_recipes, "Makefile recipes must remain limited to reviewed verification commands")
 
 
 def check_docs_plans():
@@ -606,6 +642,7 @@ def check_docs_plans():
         f"{DEFAULT_GREETING_INPUTS_PLAN.relative_to(ROOT)} must be present",
     )
     require(DEEP_REVIEW_PLAN in plans, f"{DEEP_REVIEW_PLAN.relative_to(ROOT)} must be present")
+    require(MAKE_AUTHORITY_PLAN in plans, f"{MAKE_AUTHORITY_PLAN.relative_to(ROOT)} must be present")
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")
