@@ -1,5 +1,14 @@
 # Changes
 
+## 2026-06-25 07:01 PDT
+
+- Closed the local staged-secret bypass by scanning immutable index blobs in
+  addition to safely opened worktree files.
+- Preserved Git object IDs from canonical index entries and bounded staged
+  blobs with the same per-file and aggregate limits as worktree snapshots.
+- Added regressions proving that neither a benign unstaged edit nor a benign
+  staged snapshot can hide a secret in the other tracked state.
+
 - Added a physical-root `check|lint` wrapper for hosted and contributor
   verification, clearing all five GNU Make control variables before Make starts
   and covering dry-run, ignore-errors, startup-file, `--eval`, and extra-`-f`
