@@ -3,6 +3,7 @@
 
 from contextlib import contextmanager
 import importlib.util
+import inspect
 import os
 from pathlib import Path
 import shutil
@@ -63,12 +64,33 @@ class TrackedTextDecodingTests(unittest.TestCase):
 
 
 class TrackedFileBoundaryTests(unittest.TestCase):
+    def test_worktree_reader_preserves_no_follow_open(self):
+        source = inspect.getsource(CONTRACTS.read_tracked_regular_file)
+        self.assertIn('getattr(os, "O_NOFOLLOW", 0)', source)
+        self.assertIn("os.fstat(descriptor)", source)
+
     def test_rejects_tracked_symlink_without_following_it(self):
         with temporary_repository() as repository:
             outside = repository.parent / "outside.txt"
             outside.write_text("benign", encoding="utf-8")
             os.symlink(outside, repository / "linked.txt")
             git(repository, "add", "linked.txt")
+
+            with self.assertRaisesRegex(AssertionError, "symlink|regular file"):
+                CONTRACTS.check_tracked_secret_patterns()
+
+    def test_rejects_worktree_symlink_for_regular_staged_file(self):
+        with temporary_repository() as repository:
+            outside = repository.parent / "outside-secret.txt"
+            outside.write_text(
+                "TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+                encoding="utf-8",
+            )
+            tracked_file = repository / "linked-after-stage.txt"
+            tracked_file.write_text("benign staged content\n", encoding="utf-8")
+            git(repository, "add", "linked-after-stage.txt")
+            tracked_file.unlink()
+            os.symlink(outside, tracked_file)
 
             with self.assertRaisesRegex(AssertionError, "symlink|regular file"):
                 CONTRACTS.check_tracked_secret_patterns()
@@ -97,6 +119,42 @@ class TrackedFileBoundaryTests(unittest.TestCase):
             git(repository, "add", "encoded.txt")
 
             with self.assertRaisesRegex(AssertionError, "Twilio auth token"):
+                CONTRACTS.check_tracked_secret_patterns()
+
+    def test_rejects_staged_secret_hidden_by_benign_worktree_edit(self):
+        with temporary_repository() as repository:
+            tracked_file = repository / "staged.txt"
+            tracked_file.write_text(
+                "TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+                encoding="utf-8",
+            )
+            git(repository, "add", "staged.txt")
+            tracked_file.write_text("benign worktree content\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(AssertionError, "staged.txt.*Twilio auth token"):
+                CONTRACTS.check_tracked_secret_patterns()
+
+    def test_rejects_oversized_staged_blob_hidden_by_small_worktree_edit(self):
+        with temporary_repository() as repository:
+            tracked_file = repository / "staged-large.txt"
+            tracked_file.write_bytes(b"a" * (1024 * 1024 + 1))
+            git(repository, "add", "staged-large.txt")
+            tracked_file.write_text("small worktree content\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(AssertionError, "staged-large.txt.*size limit"):
+                CONTRACTS.check_tracked_secret_patterns()
+
+    def test_rejects_worktree_secret_hidden_by_benign_staged_snapshot(self):
+        with temporary_repository() as repository:
+            tracked_file = repository / "worktree.txt"
+            tracked_file.write_text("benign staged content\n", encoding="utf-8")
+            git(repository, "add", "worktree.txt")
+            tracked_file.write_text(
+                "TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(AssertionError, "worktree.txt.*Twilio auth token"):
                 CONTRACTS.check_tracked_secret_patterns()
 
 

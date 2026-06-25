@@ -31,10 +31,11 @@ Helpful reports include:
 - Local `.env`, debug log, and HAR capture files should stay ignored because
   they can contain credentials, account identifiers, request URLs, or payloads.
 - Packet captures, trace files, `.dev.vars`, PEM files, and private key files
-  should remain ignored. The repository gate scans all tracked UTF-8 text and
-  BOM-marked UTF-16 and UTF-32 little-endian and big-endian text for
-  real-looking Twilio SIDs, populated token/phone assignments, and private-key
-  blocks while leaving unrecognized binary data uninterpreted.
+  should remain ignored. The repository gate scans both staged Git blobs and
+  their current worktree files across UTF-8 text and BOM-marked UTF-16 and
+  UTF-32 little-endian and big-endian text for real-looking Twilio SIDs,
+  populated token/phone assignments, and private-key blocks while leaving
+  unrecognized binary data uninterpreted.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - Use `./scripts/run-make.sh check` for repository verification. The wrapper
   resolves the physical checkout, accepts only the reviewed `check` or `lint`

@@ -26,6 +26,7 @@ MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protecti
 DEFAULT_GREETING_INPUTS_PLAN = DOCS_PLANS / "2026-06-14-default-context-greeting-inputs.md"
 DEEP_REVIEW_PLAN = DOCS_PLANS / "2026-06-19-deep-review-boundaries.md"
 MAKE_AUTHORITY_PLAN = DOCS_PLANS / "2026-06-21-make-authority-hardening.md"
+STAGED_SECRET_SNAPSHOT_PLAN = DOCS_PLANS / "2026-06-25-staged-secret-snapshot-scan.md"
 MAX_TRACKED_FILE_BYTES = 1024 * 1024
 MAX_TRACKED_TOTAL_BYTES = 16 * 1024 * 1024
 MAX_TRACKED_FILES = 4096
@@ -199,14 +200,18 @@ def tracked_index_entries():
     for record in records:
         try:
             metadata, path_bytes = record.split(b"\t", 1)
-            mode, _object_id, stage = metadata.split(b" ", 2)
+            mode, object_id, stage = metadata.split(b" ", 2)
             relative_path = path_bytes.decode("utf-8")
         except (UnicodeDecodeError, ValueError) as exc:
             raise AssertionError("tracked paths and index records must use canonical UTF-8") from exc
         path = Path(relative_path)
         require(not path.is_absolute() and ".." not in path.parts, "tracked path must remain repository-relative")
         require(stage == b"0", f"{relative_path} must not contain unresolved index stages")
-        entries.append((mode.decode("ascii"), relative_path))
+        require(
+            re.fullmatch(rb"(?:[0-9a-f]{40}|[0-9a-f]{64})", object_id) is not None,
+            f"{relative_path} must reference a canonical Git object ID",
+        )
+        entries.append((mode.decode("ascii"), object_id.decode("ascii"), relative_path))
     return entries
 
 
@@ -246,6 +251,33 @@ def read_tracked_regular_file(mode, relative_path):
     return bytes(data)
 
 
+def read_tracked_index_blob(mode, object_id, relative_path):
+    require(mode in {"100644", "100755"}, f"{relative_path} must be a tracked regular file, not a symlink or special entry")
+    try:
+        size_result = subprocess.run(
+            ["git", "-C", str(ROOT), "cat-file", "-s", object_id],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        size = int(size_result.stdout.strip())
+    except (subprocess.SubprocessError, ValueError) as exc:
+        raise AssertionError(f"{relative_path} staged blob size could not be read safely") from exc
+    require(size <= MAX_TRACKED_FILE_BYTES, f"{relative_path} staged blob exceeds the tracked-file size limit")
+    try:
+        blob_result = subprocess.run(
+            ["git", "-C", str(ROOT), "cat-file", "blob", object_id],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+    except subprocess.SubprocessError as exc:
+        raise AssertionError(f"{relative_path} staged blob could not be read safely") from exc
+    require(len(blob_result.stdout) == size, f"{relative_path} staged blob size changed while scanned")
+    return blob_result.stdout
+
+
 def check_required_files():
     for relative_path in [
         ".gitignore",
@@ -281,7 +313,11 @@ def check_placeholder_scope():
         "docs/plans/2026-06-08-secret-hygiene.md" in readme,
         "README must link the secret hygiene plan",
     )
-    for _mode, relative_path in tracked_index_entries():
+    require(
+        "docs/plans/2026-06-25-staged-secret-snapshot-scan.md" in readme,
+        "README must link the staged secret snapshot plan",
+    )
+    for _mode, _object_id, relative_path in tracked_index_entries():
         path = Path(relative_path)
         is_runtime_surface = path.name in RUNTIME_MANIFESTS or path.suffix.lower() in RUNTIME_SUFFIXES
         require(
@@ -387,21 +423,25 @@ def check_secret_hygiene():
 
 def check_tracked_secret_patterns():
     total_bytes = 0
-    for mode, relative_path in tracked_index_entries():
-        data = read_tracked_regular_file(mode, relative_path)
-        total_bytes += len(data)
-        require(
-            total_bytes <= MAX_TRACKED_TOTAL_BYTES,
-            f"tracked-file aggregate scan exceeds the {MAX_TRACKED_TOTAL_BYTES}-byte budget",
-        )
-        text = decode_tracked_text(data)
-        if text is None:
-            continue
-        for pattern, description in TRACKED_SECRET_PATTERNS:
+    for mode, object_id, relative_path in tracked_index_entries():
+        snapshots = [
+            ("staged", read_tracked_index_blob(mode, object_id, relative_path)),
+            ("worktree", read_tracked_regular_file(mode, relative_path)),
+        ]
+        for snapshot_name, data in snapshots:
+            total_bytes += len(data)
             require(
-                pattern.search(text) is None,
-                f"{relative_path} contains a real-looking {description}",
+                total_bytes <= MAX_TRACKED_TOTAL_BYTES,
+                f"tracked-file aggregate scan exceeds the {MAX_TRACKED_TOTAL_BYTES}-byte budget",
             )
+            text = decode_tracked_text(data)
+            if text is None:
+                continue
+            for pattern, description in TRACKED_SECRET_PATTERNS:
+                require(
+                    pattern.search(text) is None,
+                    f"{relative_path} {snapshot_name} snapshot contains a real-looking {description}",
+                )
 
 
 def check_secret_pattern_syntaxes():
@@ -643,6 +683,10 @@ def check_docs_plans():
     )
     require(DEEP_REVIEW_PLAN in plans, f"{DEEP_REVIEW_PLAN.relative_to(ROOT)} must be present")
     require(MAKE_AUTHORITY_PLAN in plans, f"{MAKE_AUTHORITY_PLAN.relative_to(ROOT)} must be present")
+    require(
+        STAGED_SECRET_SNAPSHOT_PLAN in plans,
+        f"{STAGED_SECRET_SNAPSHOT_PLAN.relative_to(ROOT)} must be present",
+    )
 
     for plan in plans:
         text = plan.read_text(encoding="utf-8")

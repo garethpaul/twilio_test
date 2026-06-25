@@ -82,10 +82,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   not casually stage credentials, account identifiers, customer payloads, or
   HTTP archive captures.
 - Packet captures, trace files, Wrangler local secrets, PEM files, and key files
-  are also ignored. The checker opens only tracked regular files without
-  following links, rejects files above 1 MiB, caps the aggregate scan at 16 MiB,
-  and scans UTF-8 (including BOM), UTF-16, and UTF-32 text in either byte order
-  for real-looking Twilio SIDs, token/phone assignments, and private keys.
+  are also ignored. The checker scans both each staged Git blob and its current
+  worktree file, opens worktree files without following links, rejects either
+  snapshot above 1 MiB, caps all bytes scanned at 16 MiB, and scans UTF-8
+  (including BOM), UTF-16, and UTF-32 text in either byte order for real-looking
+  Twilio SIDs, token/phone assignments, and private keys.
   Strongly identified BOM-less UTF-16/UTF-32 text is included; unrecognized
   binary data remains skipped. Token and phone checks cover shell exports plus
   dotenv, YAML, and JSON assignments.
@@ -143,6 +144,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   runtime-free placeholder enforcement, and current workflow pins.
 - See `docs/plans/2026-06-21-make-authority-hardening.md` for Python command,
   shell, flag, startup-file, and Makefile-identity authority checks.
+- See `docs/plans/2026-06-25-staged-secret-snapshot-scan.md` for staged-index
+  and worktree secret scanning that cannot be bypassed by an unstaged edit.
 - The pinned first-interaction v3.1.0 implementation reads both greeting
   message inputs on every supported event; each event-scoped job therefore
   supplies both non-secret messages while retaining its narrow write scope.
