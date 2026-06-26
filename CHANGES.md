@@ -1,5 +1,57 @@
 # Changes
 
+## 2026-06-26 02:42 PDT - P2 - Scan shell declaration secrets
+
+### Summary
+Closed tracked-secret scanner gaps for common shell declaration prefixes and
+PowerShell environment assignments without broadening the placeholder into a
+provider runtime.
+
+### Work completed
+- Centralized the optional assignment prefix shared by Twilio auth-token and
+  phone-number patterns.
+- Added `local`, `readonly`, `declare`, and `typeset` shell declaration forms,
+  including bounded repeated options such as `-x -r`, `-xr`, and `--`.
+- Added case-insensitive PowerShell `$env:` assignment coverage.
+- Preserved existing bare, quoted, `export`, dotenv, YAML, and JSON matching.
+- Added end-to-end staged/worktree regressions and embedded syntax contracts.
+
+### Threads
+- Started: none.
+- Continued: tracked secret hygiene — assignment grammar coverage complete.
+- Stopped: none.
+
+### Files changed
+- `scripts/check_repository_contracts.py` — expands the shared secret assignment
+  grammar and binds the completed plan into repository contracts.
+- `tests/test_repository_contracts.py` — proves shell declarations and
+  PowerShell environment assignments are rejected from tracked snapshots.
+- Documentation and plan files — record the supported syntax and validation.
+
+### Validation
+- Red-first focused unittest command — five original shell/PowerShell fixtures
+  bypassed the old scanner, then passed after implementation.
+- Follow-up red-first shell test — repeated `declare -x -r` and `readonly --`
+  options bypassed the first grammar, then passed after bounded option support.
+- `./scripts/run-make.sh check` — passed with 21 behavioral tests under `C` and
+  `C.UTF-8`.
+- `make build|check|lint|root-test|test|verify` — passed under both locales and
+  from `/tmp` through the absolute Makefile path.
+- Shell-prefix and PowerShell-prefix removal mutations — both rejected.
+- Python compilation, shell syntax, and `git diff --check` — passed.
+- Hosted Python/CodeQL exact-head checks and review remain the next action.
+
+### Bugs / findings
+- P2: `readonly`, `declare`, `typeset`, and PowerShell `$env:` assignments could
+  previously carry real-looking Twilio tokens or phone numbers undetected.
+
+### Blockers
+- None; this repository remains dependency-free and performs no live Twilio
+  calls.
+
+### Next action
+- Open the focused PR, run exact-head hosted validation and review, then merge.
+
 ## 2026-06-25 07:01 PDT
 
 - Closed the local staged-secret bypass by scanning immutable index blobs in
