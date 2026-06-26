@@ -43,6 +43,9 @@
 - No required secret or credential file was identified in the repository scan. Local `.env` files and debug logs are ignored so future Twilio experiments do not casually stage credentials, account identifiers, customer payloads, or HTTP archive captures.
 - `.env.example` documents expected Twilio variable names with empty values and keeps live sends disabled by default, including a placeholder body for future message smoke tests and an `info` log-level default. Each placeholder includes a short comment describing what may be filled locally and what must stay empty in git. Static checks require credential, phone-number, and body placeholders to remain empty and reject duplicate or undocumented Twilio placeholder entries.
 - Keep local Twilio credentials and debug output out of git; `.env` files and `*.log` and `*.har` files are intentionally ignored. Common local OS and IDE metadata files are ignored as well.
+- Tracked-secret assignment detection covers bare, quoted, `export`, `local`,
+  `readonly`, `declare`, `typeset`, and PowerShell `$env:` forms for Twilio
+  token and phone placeholders.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-twilio-test-baseline.md` for the canonical placeholder contract baseline.

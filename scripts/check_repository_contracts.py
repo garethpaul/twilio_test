@@ -20,6 +20,7 @@ LOCAL_METADATA_IGNORE_PLAN = DOCS_PLANS / "2026-06-09-local-metadata-ignore.md"
 WORKFLOW_HARDENING_PLAN = DOCS_PLANS / "2026-06-10-workflow-hardening-and-ci.md"
 TRACKED_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-10-tracked-secret-scan.md"
 SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-10-secret-assignment-syntaxes.md"
+SHELL_SECRET_SYNTAX_PLAN = DOCS_PLANS / "2026-06-26-shell-secret-assignment-syntaxes.md"
 UTF16_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf16-tracked-secret-scan.md"
 UTF32_SECRET_SCAN_PLAN = DOCS_PLANS / "2026-06-13-utf32-tracked-secret-scan.md"
 MAKE_ROOT_PROTECTION_PLAN = DOCS_PLANS / "2026-06-14-make-root-override-protection.md"
@@ -83,17 +84,23 @@ RUNTIME_SUFFIXES = {
     ".tsx",
 }
 
+SECRET_ASSIGNMENT_PREFIX = (
+    r'''(?:(?:export|local|readonly|declare|typeset)'''
+    r'''(?:[ \t]+(?:[-+][A-Za-z]+|--))*[ \t]+'''
+    r'''|\$env:)?'''
+)
+
 TRACKED_SECRET_PATTERNS = [
     (re.compile(r"(?<![0-9A-Za-z])(AC|SK|SM|CA)[0-9a-fA-F]{32}(?![0-9A-Za-z])"), "Twilio SID"),
     (
         re.compile(
-            r'''(?im)^[ \t]*(?:export[ \t]+)?["']?TWILIO_AUTH_TOKEN["']?[ \t]*(?:=|:)[ \t]*["']?[0-9a-f]{32}(?![0-9a-f])'''
+            rf'''(?im)^[ \t]*{SECRET_ASSIGNMENT_PREFIX}["']?TWILIO_AUTH_TOKEN["']?[ \t]*(?:=|:)[ \t]*["']?[0-9a-f]{{32}}(?![0-9a-f])'''
         ),
         "Twilio auth token assignment",
     ),
     (
         re.compile(
-            r'''(?im)^[ \t]*(?:export[ \t]+)?["']?TWILIO_(FROM|TO)["']?[ \t]*(?:=|:)[ \t]*["']?\+?[0-9][0-9 ()-]{5,}'''
+            rf'''(?im)^[ \t]*{SECRET_ASSIGNMENT_PREFIX}["']?TWILIO_(FROM|TO)["']?[ \t]*(?:=|:)[ \t]*["']?\+?[0-9][0-9 ()-]{{5,}}'''
         ),
         "Twilio phone assignment",
     ),
@@ -317,6 +324,10 @@ def check_placeholder_scope():
         "docs/plans/2026-06-25-staged-secret-snapshot-scan.md" in readme,
         "README must link the staged secret snapshot plan",
     )
+    require(
+        "docs/plans/2026-06-26-shell-secret-assignment-syntaxes.md" in readme,
+        "README must link the shell secret assignment plan",
+    )
     for _mode, _object_id, relative_path in tracked_index_entries():
         path = Path(relative_path)
         is_runtime_surface = path.name in RUNTIME_MANIFESTS or path.suffix.lower() in RUNTIME_SUFFIXES
@@ -453,9 +464,17 @@ def check_secret_pattern_syntaxes():
         "TWILIO_AUTH_TOKEN: " + token,
         '"TWILIO_AUTH_TOKEN": "' + token + '"',
         "export TWILIO_AUTH_TOKEN=" + token,
+        "local TWILIO_AUTH_TOKEN=" + token,
+        "readonly TWILIO_AUTH_TOKEN=" + token,
+        "readonly -- TWILIO_FROM=" + second_phone,
+        "declare -x TWILIO_AUTH_TOKEN=" + token,
+        "declare -x -r TWILIO_AUTH_TOKEN=" + token,
+        "$env:TWILIO_AUTH_TOKEN = \"" + token + '"',
         "TWILIO_FROM: '" + second_phone + "'",
         '"TWILIO_TO": "' + third_phone + '"',
         "export TWILIO_TO=" + first_phone,
+        "typeset -xr TWILIO_FROM=" + second_phone,
+        "$env:TWILIO_TO = \"" + third_phone + '"',
     ]
     for fixture in secret_fixtures:
         require(
@@ -664,6 +683,10 @@ def check_docs_plans():
     require(
         SECRET_SYNTAX_PLAN in plans,
         f"{SECRET_SYNTAX_PLAN.relative_to(ROOT)} must be present",
+    )
+    require(
+        SHELL_SECRET_SYNTAX_PLAN in plans,
+        f"{SHELL_SECRET_SYNTAX_PLAN.relative_to(ROOT)} must be present",
     )
     require(
         UTF16_SECRET_SCAN_PLAN in plans,

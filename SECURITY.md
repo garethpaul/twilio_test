@@ -35,7 +35,9 @@ Helpful reports include:
   their current worktree files across UTF-8 text and BOM-marked UTF-16 and
   UTF-32 little-endian and big-endian text for real-looking Twilio SIDs,
   populated token/phone assignments, and private-key blocks while leaving
-  unrecognized binary data uninterpreted.
+  unrecognized binary data uninterpreted. Assignment scanning includes common
+  shell declarations and PowerShell `$env:` syntax in addition to dotenv,
+  YAML, and JSON forms.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - Use `./scripts/run-make.sh check` for repository verification. The wrapper
   resolves the physical checkout, accepts only the reviewed `check` or `lint`

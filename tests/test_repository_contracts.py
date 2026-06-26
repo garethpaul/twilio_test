@@ -157,6 +157,36 @@ class TrackedFileBoundaryTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "worktree.txt.*Twilio auth token"):
                 CONTRACTS.check_tracked_secret_patterns()
 
+    def test_rejects_shell_declaration_secret_assignments(self):
+        fixtures = {
+            "local-token.sh": "local TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+            "readonly-token.sh": "readonly TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+            "readonly-options-phone.sh": "readonly -- TWILIO_FROM=+15559876543",
+            "declare-phone.sh": "declare -x TWILIO_TO=+15551234567",
+            "declare-options-token.sh": "declare -x -r TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2,
+            "typeset-phone.sh": "typeset -xr TWILIO_FROM=+15557654321",
+        }
+        for relative_path, fixture in fixtures.items():
+            with self.subTest(relative_path=relative_path), temporary_repository() as repository:
+                (repository / relative_path).write_text(fixture + "\n", encoding="utf-8")
+                git(repository, "add", relative_path)
+
+                with self.assertRaisesRegex(AssertionError, "Twilio auth token|Twilio phone"):
+                    CONTRACTS.check_tracked_secret_patterns()
+
+    def test_rejects_powershell_environment_secret_assignments(self):
+        fixtures = {
+            "token.ps1": '$env:TWILIO_AUTH_TOKEN = "' + "0123456789abcdef" * 2 + '"',
+            "phone.ps1": '$env:TWILIO_FROM = "+15551234567"',
+        }
+        for relative_path, fixture in fixtures.items():
+            with self.subTest(relative_path=relative_path), temporary_repository() as repository:
+                (repository / relative_path).write_text(fixture + "\n", encoding="utf-8")
+                git(repository, "add", relative_path)
+
+                with self.assertRaisesRegex(AssertionError, "Twilio auth token|Twilio phone"):
+                    CONTRACTS.check_tracked_secret_patterns()
+
 
 class PlaceholderScopeTests(unittest.TestCase):
     def test_allows_reviewed_make_wrapper(self):

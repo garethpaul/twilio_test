@@ -88,8 +88,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   (including BOM), UTF-16, and UTF-32 text in either byte order for real-looking
   Twilio SIDs, token/phone assignments, and private keys.
   Strongly identified BOM-less UTF-16/UTF-32 text is included; unrecognized
-  binary data remains skipped. Token and phone checks cover shell exports plus
-  dotenv, YAML, and JSON assignments.
+  binary data remains skipped. Token and phone checks cover bare and quoted
+  dotenv, YAML, and JSON assignments, shell `export`, `local`, `readonly`,
+  `declare`, and `typeset` declarations, plus PowerShell `$env:` assignments.
 - `.env.example` documents expected Twilio variable names with empty values and
   keeps live sends disabled by default, including a placeholder body for future
   message smoke tests and an `info` log-level default. Each placeholder
@@ -136,6 +137,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   pattern and local capture-artifact coverage.
 - See `docs/plans/2026-06-10-secret-assignment-syntaxes.md` for shell, dotenv,
   YAML, and JSON credential-assignment coverage.
+- See `docs/plans/2026-06-26-shell-secret-assignment-syntaxes.md` for shell
+  declaration and PowerShell environment-assignment coverage.
 - See `docs/plans/2026-06-13-utf16-tracked-secret-scan.md` for the UTF-16
   tracked-text encoding boundary.
 - See `docs/plans/2026-06-13-utf32-tracked-secret-scan.md` for the UTF-32 BOM
