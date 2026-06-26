@@ -85,7 +85,8 @@ RUNTIME_SUFFIXES = {
 }
 
 SECRET_ASSIGNMENT_PREFIX = (
-    r'''(?:(?:export|local|readonly|declare|typeset)'''
+    r'''(?:(?:env|/usr/bin/env)(?:[ \t]+(?:--|-[iv]|-(?:u|C|S)(?:[^ \t]+|[ \t]+[^ \t]+)|--(?:ignore-environment|debug|null)|--(?:unset|chdir|split-string|argv0)(?:=[^ \t]+|[ \t]+[^ \t]+)))*[ \t]+'''
+    r'''|(?:export|local|readonly|declare|typeset)'''
     r'''(?:[ \t]+(?:[-+][A-Za-z]+|--))*[ \t]+'''
     r'''|\$env:)?'''
 )
