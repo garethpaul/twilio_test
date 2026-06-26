@@ -174,6 +174,23 @@ class TrackedFileBoundaryTests(unittest.TestCase):
                 with self.assertRaisesRegex(AssertionError, "Twilio auth token|Twilio phone"):
                     CONTRACTS.check_tracked_secret_patterns()
 
+    def test_rejects_env_command_secret_assignments(self):
+        fixtures = {
+            "env-token.sh": "env TWILIO_AUTH_TOKEN=" + "0123456789abcdef" * 2 + " command",
+            "env-options-phone.sh": "env -i -- TWILIO_FROM=+15551234567 command",
+            "absolute-env-token.sh": "/usr/bin/env TWILIO_AUTH_TOKEN=" + "fedcba9876543210" * 2 + " command",
+            "env-long-option-phone.sh": "env --ignore-environment TWILIO_TO=+15557654321 command",
+            "env-short-option-operand-token.sh": "env -u OLD_TOKEN TWILIO_AUTH_TOKEN=" + "0011223344556677" * 2 + " command",
+            "env-long-option-operand-phone.sh": "/usr/bin/env --chdir /tmp TWILIO_FROM=+15559876543 command",
+        }
+        for relative_path, fixture in fixtures.items():
+            with self.subTest(relative_path=relative_path), temporary_repository() as repository:
+                (repository / relative_path).write_text(fixture + "\n", encoding="utf-8")
+                git(repository, "add", relative_path)
+
+                with self.assertRaisesRegex(AssertionError, "Twilio auth token|Twilio phone"):
+                    CONTRACTS.check_tracked_secret_patterns()
+
     def test_rejects_powershell_environment_secret_assignments(self):
         fixtures = {
             "token.ps1": '$env:TWILIO_AUTH_TOKEN = "' + "0123456789abcdef" * 2 + '"',

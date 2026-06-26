@@ -1,5 +1,48 @@
 # Changes
 
+## 2026-06-26 16:56 PDT - P1 - Scan `env` command secret assignments
+
+### Summary
+Closed a tracked-secret scanner bypass for Twilio tokens and phone numbers
+assigned through the shell `env` command.
+
+### Work completed
+- Added red-first token and phone fixtures for `env` assignments.
+- Recognized `env`, `/usr/bin/env`, no-operand options, attached or separated
+  option operands, and `--` before the existing exact Twilio patterns.
+- Documented the scanner boundary without introducing Twilio runtime behavior.
+
+### Threads
+- Started: none; the bounded scanner change was completed directly.
+- Continued: repository-wide tracked-secret hardening.
+- Stopped: none.
+
+### Files changed
+- `scripts/check_repository_contracts.py` — scans `env` assignment prefixes.
+- `tests/test_repository_contracts.py` — proves token and phone bypasses fail.
+- `SECURITY.md`, `AGENTS.md`, and the completed plan — document the boundary.
+
+### Validation
+- Focused unit regression — failed twice before implementation for the expected
+  missing token and phone detections.
+- Manual exact-head review found `-u NAME` and `--chdir DIR` bypasses in the
+  first patch; both new regressions failed before the explicit option grammar.
+- `./scripts/run-make.sh check` — passed 22 unit tests, repository contracts,
+  greeting runtime regressions, and Make authority tests.
+- External-path `make -C /tmp -f <checkout>/Makefile check` — passed.
+- Python compilation and `git diff --check` — passed.
+- Hosted exact-head checks remain next.
+
+### Bugs / findings
+- P1 security: tracked shell files could hide populated protected variables
+  behind `env` command invocation syntax.
+
+### Blockers
+- None.
+
+### Next action
+- Run local and hosted exact-head validation, review, and merge the focused PR.
+
 ## 2026-06-26 02:42 PDT - P2 - Scan shell declaration secrets
 
 ### Summary

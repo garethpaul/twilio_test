@@ -45,7 +45,7 @@
 - Keep local Twilio credentials and debug output out of git; `.env` files and `*.log` and `*.har` files are intentionally ignored. Common local OS and IDE metadata files are ignored as well.
 - Tracked-secret assignment detection covers bare, quoted, `export`, `local`,
   `readonly`, `declare`, `typeset`, and PowerShell `$env:` forms for Twilio
-  token and phone placeholders.
+  token and phone placeholders, plus `env` command assignments with options.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-twilio-test-baseline.md` for the canonical placeholder contract baseline.
